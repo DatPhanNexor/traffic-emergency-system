@@ -1,0 +1,147 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý loại sự cố</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/loai-su-co.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+  <body>
+    <div id="main-container">
+      <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+      <div class="main-content">
+        <h2 class="header-title">Quản Lý Loại Sự Cố</h2>
+
+        <div class="form-card">
+          <form
+            id="createForm"
+            enctype="multipart/form-data"
+            class="form-inline"
+          >
+            <div class="input-group">
+              <label>Tên loại sự cố</label>
+              <input
+                type="text"
+                name="ten"
+                placeholder="Ví dụ: Cháy nổ, Ngập lụt..."
+                required
+              />
+            </div>
+
+            <div class="input-group">
+              <label>Icon hiển thị</label>
+              <input type="file" name="iconFile" accept="image/*" />
+            </div>
+
+            <button type="submit" class="btn-create">
+              <i class="fa-solid fa-plus"></i> Tạo mới
+            </button>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px">ID</th>
+                <th>Tên sự cố</th>
+                <th style="width: 120px; text-align: center">Icon</th>
+                <th style="width: 150px; text-align: center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="item : ${list}">
+                <td
+                  th:text="'#' + ${item.id}"
+                  style="font-weight: 600; color: #94a3b8"
+                ></td>
+                <td th:text="${item.ten}" style="font-weight: 600"></td>
+                <td style="text-align: center">
+                  <img
+                    th:if="${item.iconUrl != null}"
+                    th:src="@{${item.iconUrl}}"
+                    alt="icon"
+                    class="icon-preview"
+                  />
+                  <span
+                    th:unless="${item.iconUrl != null}"
+                    style="color: #cbd5e1"
+                    >N/A</span
+                  >
+                </td>
+                <td style="text-align: center">
+                  <button
+                    type="button"
+                    class="btn-edit"
+                    th:attr=" data-id=${item.id},
+                              data-ten=${item.ten},
+                              data-icon=${item.iconUrl} "
+                    onclick="openEdit(this)"
+                  >
+                    <i class="fa-solid fa-pen"></i> Sửa
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-delete"
+                    th:onclick="'deleteSuCo(' + ${item.id} + ')'"
+                  >
+                    <i class="fa-solid fa-trash-can"></i> Xóa
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div
+            th:if="${#lists.isEmpty(list)}"
+            style="padding: 40px; text-align: center; color: #94a3b8"
+          >
+            Chưa có loại sự cố nào được tạo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <h3>Chỉnh sửa loại sự cố</h3>
+
+        <input type="hidden" id="editId" />
+
+        <div class="input-group">
+          <label>Tên loại sự cố</label>
+          <input type="text" id="editTen" />
+        </div>
+
+        <div class="input-group">
+          <label>Đổi icon</label>
+          <input type="file" id="editFile" accept="image/*" />
+        </div>
+
+        <img
+          id="previewIcon"
+          style="width: 60px; margin-top: 10px; display: none"
+        />
+
+        <div style="margin-top: 20px; text-align: right">
+          <button onclick="closeEdit()" class="btn-delete">Hủy</button>
+          <button onclick="submitEdit()" class="btn-create">Lưu</button>
+        </div>
+      </div>
+    </div>
+    <script th:src="@{/js/admin/loai-su-co.js}"></script>
+    <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+  </body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <nav id="sidebar" th:fragment="sidebar">
+      <div class="sidebar-header">
+        <span>DASHBOARD</span>
+        <button class="toggle-btn" onclick="toggleSidebar()">
+          <i class="fa-solid fa-chevron-left" id="toggle-icon"></i>
+        </button>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li>
+          <a
+            href="/admin/trang-chu"
+            class="menu-item"
+            th:classappend="${activePage == 'trang-chu'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-house"></i><span>Trang Chủ</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/quan-ly-user"
+            class="menu-item"
+            th:classappend="${activePage == 'quan-ly-user'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-users"></i><span>Quản Lý User</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/loai-su-co"
+            class="menu-item"
+            th:classappend="${activePage == 'loai-su-co'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Quản Lý Sự Cố</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/bao-cao-su-co"
+            class="menu-item"
+            th:classappend="${activePage == 'bao-cao-su-co'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-file-signature"></i>
+            <span>Quản Lý Báo Cáo</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/quan-ly-tru-so"
+            class="menu-item"
+            th:classappend="${activePage == 'quan-ly-tru-so'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-building"></i>
+            <span>Quản Lý Trụ Sở</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/quan-ly-camera"
+            class="menu-item"
+            th:classappend="${activePage == 'quan-ly-camera'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-camera"></i>
+            <span>Quản Lý Camera</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/goi"
+            class="menu-item"
+            th:classappend="${activePage == 'quan-ly-goi'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-box"></i>
+            <span>Quản Lý Gói SOS</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/quan-ly-qua"
+            class="menu-item"
+            th:classappend="${activePage == 'quan-ly-qua'} ? 'active' : ''"
+          >
+            <i class="fa-solid fa-gift"></i>
+            <span>Quản Lý Quà</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/admin/quan-ly-doanh-thu"
+            class="menu-item"
+            th:classappend="${activePage == 'quan-ly-doanh-thu'} ? 'active' : ''"
+          >
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Quản Lý Doanh Thu</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </body>
+</html>

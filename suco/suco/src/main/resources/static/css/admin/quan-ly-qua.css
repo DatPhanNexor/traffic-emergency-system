@@ -1,0 +1,64 @@
+:root {
+  --primary-color: #1a1a1a;
+  --accent-color: #3b82f6;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 75px;
+  --font-main: "Inter", system-ui, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  font-family: var(--font-main);
+  background: #f1f5f9;
+  overflow: hidden;
+}
+#main-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex-grow: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  border-left: 5px solid var(--accent-color);
+  padding-left: 15px;
+  margin-bottom: 25px;
+  color: #0f172a;
+}
+
+/* Style cho khung Voucher */
+.voucher-box {
+  background: #eff6ff;
+  border: 1px dashed #3b82f6;
+  padding: 15px;
+  border-radius: 8px;
+}
+.modal-content {
+  background: white;
+  width: 500px;
+  margin: 80px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal h4 {
+  font-weight: 600;
+  border-left: 4px solid #3b82f6;
+  padding-left: 10px;
+}

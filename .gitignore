@@ -1,0 +1,48 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Chặn file Admin SDK Firebase 
+canhbao-b600b-firebase-adminsdk-*.json
+
+# Chặn log và file chạy tạm
+*.log
+.DS_Store
+
+# Chặn file cấu hình Database/Môi trường
+.env
+
+# Chặn toàn bộ thư mục upload dữ liệu của người dùng
+**/uploads/
+# Chặn các file ảnh mẫu trong project
+img/

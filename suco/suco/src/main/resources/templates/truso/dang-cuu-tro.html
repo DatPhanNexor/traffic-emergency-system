@@ -1,0 +1,174 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Đang cứu trợ - Trụ sở</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/fragments/truso/sidebar.css}" />
+    <link rel="stylesheet" th:href="@{/css/truso/dang-cuu-tro.css}" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  </head>
+  <body>
+    <div th:replace="fragments/truso/sidebar :: sidebar('doing')"></div>
+
+    <main class="main-content">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+          <h3 class="mb-0 me-3">
+            <i class="fa-solid fa-truck-medical text-primary"></i> Đang cứu trợ
+          </h3>
+
+          <div class="btn-group ms-3" role="group">
+            <button
+              type="button"
+              id="btn-filter-su-co"
+              class="btn btn-outline-secondary active"
+            >
+              <i class="fa-solid fa-triangle-exclamation"></i> Sự cố
+            </button>
+            <button
+              type="button"
+              id="btn-filter-sos"
+              class="btn btn-outline-danger"
+            >
+              <i class="fa-solid fa-bell"></i> SOS
+            </button>
+          </div>
+        </div>
+
+        <div class="text-muted">Cập nhật: <span id="clock">00:00:00</span></div>
+      </div>
+
+      <div id="rescue-list">
+        <div class="alert alert-secondary py-4" id="no-data">
+          Hiện không có cứu trợ đang diễn ra.
+        </div>
+      </div>
+      <audio id="remoteAudio" autoplay></audio>
+
+      <div
+        id="call-panel"
+        class="card shadow-lg"
+        style="
+          display: none;
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          width: 300px;
+          z-index: 9999;
+          border-radius: 15px;
+        "
+      >
+        <div
+          class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+        >
+          <span><i class="fa-solid fa-headset"></i> Đàm thoại cứu hộ</span>
+          <button
+            onclick="endCall()"
+            class="btn-close btn-close-white"
+          ></button>
+        </div>
+        <div class="card-body text-center">
+          <div id="call-status" class="mb-3 fw-bold text-primary">
+            Đang kết nối...
+          </div>
+          <div class="d-flex justify-content-center gap-3">
+            <button
+              id="btn-mic"
+              onclick="toggleMic()"
+              class="btn btn-outline-secondary rounded-circle"
+            >
+              <i class="fa-solid fa-microphone"></i>
+            </button>
+            <button onclick="endCall()" class="btn btn-danger rounded-circle">
+              <i class="fa-solid fa-phone-slash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="overlay"></div>
+    <div id="detail-panel">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        "
+      >
+        <strong>Chi tiết</strong
+        ><button id="detail-close" class="btn btn-sm btn-light">✖</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+
+    <div id="payment-panel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="m-0 text-success">
+          <i class="fa-solid fa-file-invoice-dollar"></i> Lập hóa đơn cứu trợ
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          onclick="closePayment()"
+        ></button>
+      </div>
+
+      <div id="status-area" class="mb-3"></div>
+
+      <div class="mb-3">
+        <label class="small fw-bold">Tên sự cố / Loại hư hỏng:</label>
+        <input
+          type="text"
+          id="pay-sos-name"
+          class="form-control"
+          placeholder="Ví dụ: Thay lốp, Kích bình..."
+        />
+      </div>
+      <div class="mb-3">
+        <label class="small fw-bold">Nội dung đã xử lý:</label>
+        <textarea
+          id="pay-treatment"
+          class="form-control"
+          rows="3"
+          placeholder="Ghi chú chi tiết công việc..."
+        ></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="small fw-bold">Giá thu thêm (VNĐ):</label>
+        <input
+          type="number"
+          id="pay-amount"
+          class="form-control fw-bold text-danger"
+        />
+        <div id="vip-note" class="small text-muted mt-1"></div>
+      </div>
+
+      <div class="d-flex gap-2 mt-4">
+        <button class="btn btn-secondary w-100" onclick="closePayment()">
+          Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-success w-100"
+          onclick="submitPayment(event)"
+        >
+          Xác nhận
+        </button>
+      </div>
+    </div>
+    <script th:src="@{/js/truso/dang-cuu-tro.js}"></script>
+    <script th:src="@{/js/fragments/truso/sidebar.js}"></script>
+  </body>
+</html>

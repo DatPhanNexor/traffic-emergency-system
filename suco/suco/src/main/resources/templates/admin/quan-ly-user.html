@@ -1,0 +1,125 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Người dùng - SOS System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/quan-ly-user.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+  <body>
+    <div id="main-container">
+            <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+
+      <div class="main-content">
+        <h2 class="header-title">Danh Sách Người Dùng</h2>
+        <div class="toolbar">
+          <form class="search-box" action="/admin/quan-ly-user" method="get">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              name="keyword"
+              th:value="${keyword}"
+              placeholder="Tìm kiếm theo tên hoặc email..."
+              onchange="this.form.submit()"
+            />
+          </form>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Provider</th>
+                <th>Gói dịch vụ</th>
+                <th>Điểm tích lũy</th>
+                <th>Spam</th>
+                <th style="text-align: center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="u : ${listUsers}">
+                <td th:text="${u.name}" style="font-weight: 600"></td>
+                <td th:text="${u.email}"></td>
+                <td>
+                  <span
+                    style="
+                      background: #f1f5f9;
+                      padding: 4px 8px;
+                      border-radius: 4px;
+                      font-size: 12px;
+                    "
+                    th:text="${u.provider}"
+                  ></span>
+                </td>
+                <td>
+                  <span th:text="${u.tenGoi ?: 'Chưa đăng ký'}"></span>
+                </td>
+                <td
+                  th:text="${u.totalPoints} + ' điểm'"
+                  style="color: #2563eb; font-weight: bold"
+                ></td>
+                <td>
+                  <span
+                    th:if="${u.spamCount > 0}"
+                    style="color: #ef4444; font-weight: bold"
+                    ><i class="fa-solid fa-triangle-exclamation"></i>
+                    [[${u.spamCount}]]</span
+                  >
+                  <span th:if="${u.spamCount == 0}" style="color: #16a34a"
+                    >Uy tín</span
+                  >
+                </td>
+                <td style="text-align: center">
+                  <!-- Nút Gỡ Spam -->
+                  <a
+                    th:if="${u.spamCount > 0}"
+                    th:href="@{'/admin/quan-ly-user/reset-spam/' + ${u.uid}}"
+                    class="btn-action btn-edit"
+                    onclick="
+                      return confirm('Xác nhận người dùng này không spam?');
+                    "
+                  >
+                    <i class="fa-solid fa-rotate-left"></i> Gỡ Spam
+                  </a>
+
+                  
+                  <button
+  type="button"
+  class="btn-action btn-delete"
+  th:data-uid="${u.uid}"
+  onclick="confirmDeleteUser(this)"
+>
+    <i class="fa-solid fa-trash"></i>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div
+            th:if="${#lists.isEmpty(listUsers)}"
+            style="padding: 30px; text-align: center; color: #94a3b8"
+          >
+            Không tìm thấy người dùng nào.
+          </div>
+        </div>
+      </div>
+    </div>
+    <script th:src="@{/js/admin/quan-ly-user.js}"></script>
+        <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+
+  </body>
+</html>

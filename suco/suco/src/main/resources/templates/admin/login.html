@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Login</title>
+    <link rel="stylesheet" th:href="@{/css/admin/login.css}" />
+  </head>
+
+  <body>
+    <div class="box">
+      <h2>ADMIN LOGIN</h2>
+
+      <form id="loginForm">
+        <input type="email" name="email" placeholder="Email admin" required />
+        <input
+          type="password"
+          name="password"
+          placeholder="Mật khẩu"
+          required
+        />
+        <button type="submit">Đăng nhập</button>
+      </form>
+
+      <div id="error" class="error"></div>
+    </div>
+    <script th:src="@{/js/admin/login.js}"></script>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lịch sử cứu trợ - SOS System</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/fragments/truso/sidebar.css}" />
+    <link rel="stylesheet" th:href="@{/css/truso/lich-su-cuu-tro.css}" />
+  </head>
+  <body>
+    <div th:replace="fragments/truso/sidebar :: sidebar('history')"></div>
+
+    <main class="main-content">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Lịch sử cứu trợ</h2>
+        <div class="btn-group">
+          <button
+            id="btn-filter-su-co"
+            class="btn btn-outline-secondary active"
+          >
+            Sự cố
+          </button>
+          <button id="btn-filter-sos" class="btn btn-outline-danger">
+            SOS
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr id="table-header"></tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+        <div id="no-data" class="text-center py-5" style="display: none">
+          <i class="fa-solid fa-folder-open fa-3x text-muted mb-3"></i>
+          <p class="text-muted">Không có dữ liệu lịch sử.</p>
+        </div>
+      </div>
+    </main>
+    <script th:src="@{/js/truso/lich-su-cuu-tro.js}"></script>
+    <script th:src="@{/js/fragments/truso/sidebar.js}"></script>
+  </body>
+</html>

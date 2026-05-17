@@ -1,0 +1,279 @@
+#main-content,
+.main-content {
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  scrollbar-gutter: stable;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Panel chi tiết bên phải */
+#sos-detail-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 360px;
+  max-height: 90vh;
+  background: white;
+  z-index: 1001;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+.panel-header {
+  background: var(--danger);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+.panel-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+.info-group {
+  margin-bottom: 16px;
+}
+.info-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #6b7280;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.info-value {
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+.sos-image {
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 8px;
+  border: 1px solid #eee;
+  object-fit: cover;
+  max-height: 200px;
+  cursor: pointer;
+}
+.audio-player {
+  width: 100%;
+  height: 40px;
+  margin-top: 8px;
+}
+.btn-approve {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 14px;
+  width: 100%;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pulse-marker {
+  width: 24px;
+  height: 24px;
+  background: var(--danger);
+  border: 3px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+/* Chờ xử lý: Đỏ nháy */
+.marker-cho-xu-ly {
+  width: 24px;
+  height: 24px;
+  background: #ef4444;
+  border: 3px solid white;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+/* Đang xử lý: Vàng nháy */
+.marker-dang-xu-ly {
+  width: 24px;
+  height: 24px;
+  background: #f59e0b;
+  border: 3px solid white;
+  border-radius: 50%;
+  animation: pulse-yellow 1.5s infinite;
+}
+/* Hoàn thành: Xanh lá, đứng yên */
+.marker-hoan-thanh {
+  width: 24px;
+  height: 24px;
+  background: #10b981;
+  border: 3px solid white;
+  border-radius: 50%;
+}
+
+@keyframes pulse-yellow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+/* CSS này giúp tạo hình dáng Marker giống ghim bản đồ */
+.marker-pin {
+  width: 50px;
+  height: 50px;
+  border-radius: 50% 50% 50% 50%; /* Hình tròn */
+  border: 4px solid; /* Màu sẽ được gán bằng JS */
+  position: relative;
+  z-index: 2;
+}
+
+.marker-tail {
+  width: 15px;
+  height: 15px;
+  transform: rotate(45deg);
+  position: absolute;
+  bottom: -7px;
+  left: 18px;
+  z-index: 1;
+}
+
+.marker-icon {
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.custom-marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Không đặt position: relative ở đây để tránh làm lệch anchor của Mapbox */
+}
+
+/* Phần đầu ghim hình tròn trắng, viền có màu */
+.marker-pin-main {
+  width: 42px; /* Tăng từ 36px lên 42px */
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25); /* Đổ bóng đậm hơn cho rõ */
+  border: 3px solid #94a3b8;
+  z-index: 2;
+  position: relative;
+  box-sizing: border-box; /* QUAN TRỌNG: Giữ hình tròn hoàn hảo */
+  overflow: hidden; /* Cắt bớt phần icon thừa nếu có */
+}
+/* Icon bên trong */
+.marker-pin-main img {
+  width: 26px; /* Tăng kích thước icon */
+  height: 26px;
+  object-fit: contain;
+}
+
+/* Đuôi nhọn của ghim */
+/* Đuôi nhọn của ghim - Cố định vị trí tuyệt đối */
+.marker-tail-fix {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 12px solid #94a3b8;
+  margin-top: -4px;
+  z-index: 1;
+}
+/* Hiệu ứng nháy chuẩn: Không lan rộng, chỉ nháy quanh Marker */
+@keyframes pulse-red {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.marker-pulse {
+  animation: pulse-red 2s infinite;
+  border-radius: 50%;
+}
+
+@keyframes shake {
+  0% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(15deg);
+  }
+  40% {
+    transform: rotate(-15deg);
+  }
+  60% {
+    transform: rotate(10deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+.animate-shake {
+  animation: shake 0.5s infinite;
+}
+
+/* Làm cho form và button trông như một cái link bình thường */
+.nav-item-form {
+  display: inline; /* Giữ nó nằm trên cùng một dòng nếu cần */
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item-button {
+  background: none; /* Xóa nền xám mặc định */
+  border: none; /* Xóa viền mặc định */
+  padding: 0; /* Xóa khoảng cách mặc định */
+  font: inherit; /* Dùng font của menu cha */
+  cursor: pointer; /* Hiện bàn tay khi rê chuột vào */
+  color: inherit; /* Lấy màu chữ của menu */
+  display: flex; /* Để căn chỉnh icon và chữ cho đẹp */
+  align-items: center;
+  width: 100%; /* Để nó tràn hết chiều ngang như thẻ a */
+  text-decoration: none;
+}
+
+/* Hiệu ứng hover cho đồng bộ với các thẻ a khác */
+.nav-item-button:hover {
+  background-color: #374151; /* Hoặc màu hover bạn đang dùng */
+  border-radius: 0.5rem;
+}

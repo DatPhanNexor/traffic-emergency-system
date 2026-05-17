@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hệ Thống Quản Lý Sự Cố - Admin Dashboard</title>
+
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+      type="text/css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/trang-chu.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+  <body>
+    <button id="mobile-toggle"><i class="fa-solid fa-bars"></i></button>
+
+    <div id="main-container">
+      <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+      <div id="map-wrapper">
+        <div id="adminMap"></div>
+        <div id="notification-bell">
+          <i class="fa-solid fa-bell"></i>
+          <span class="badge" style="display: none">0</span>
+          <div id="notification-dropdown" class="notification-dropdown">
+            <div class="dropdown-header">Sự cố cần duyệt</div>
+            <div id="notification-list" class="notification-list">
+              <div class="no-notification">Không có báo cáo cần duyệt</div>
+            </div>
+            <div class="dropdown-footer">
+              <a href="/admin/bao-cao-su-co">Xem tất cả</a>
+            </div>
+          </div>
+        </div>
+        <div id="map-controls">
+          <div
+            class="control-tab"
+            data-target="form-su-co"
+            title="Báo cáo sự cố"
+          >
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div
+            class="control-tab"
+            data-target="form-sos"
+            title="Thêm trụ sở SOS"
+          >
+            <i class="fa-solid fa-house-medical"></i>
+          </div>
+          <div class="control-tab" data-target="form-camera" title="Gắn Camera">
+            <i class="fa-solid fa-camera"></i>
+          </div>
+        </div>
+
+        <div id="side-panel-container">
+          <div id="form-su-co" class="side-panel">
+            <h3>Báo Cáo Sự Cố</h3>
+            <form id="adminSubmitForm" enctype="multipart/form-data">
+              <input
+                type="text"
+                class="lat-field"
+                name="viDo"
+                placeholder="Vĩ độ"
+                readonly
+              />
+              <input
+                type="text"
+                class="lng-field"
+                name="kinhDo"
+                placeholder="Kinh độ"
+                readonly
+              />
+
+              <select name="loaiSuCo.id" required>
+                <option value="">-- Chọn loại sự cố --</option>
+                <option
+                  th:each="loai : ${listLoaiSuCo}"
+                  th:value="${loai.id}"
+                  th:text="${loai.ten}"
+                ></option>
+              </select>
+
+              <input
+                type="text"
+                name="moTa"
+                placeholder="Mô tả sự cố"
+                required
+              />
+              <input type="file" name="image" accept="image/*" required />
+
+              <button type="button" onclick="handleAdminSubmit()">
+                Gửi báo cáo
+              </button>
+            </form>
+          </div>
+
+          <div id="form-sos" class="side-panel">
+            <h3>Quản Lý Trụ Sở SOS</h3>
+            <form
+              id="sosSubmitForm"
+              onsubmit="
+                event.preventDefault();
+                return false;
+              "
+            >
+              <input type="text" class="lat-field" name="viDo" readonly />
+              <input type="text" class="lng-field" name="kinhDo" readonly />
+
+              <div
+                style="background: #fdf2f2; padding: 10px; border-radius: 8px"
+              >
+                <label>Chọn trụ sở cần gán vị trí:</label>
+                <select
+                  name="id"
+                  id="select-tru-so"
+                  onchange="toggleNewStationFields()"
+                >
+                  <option value="">-- TẠO TRỤ SỞ MỚI --</option>
+                  <option
+                    th:each="ts : ${listTruSoChuaGan}"
+                    th:value="${ts.id}"
+                    th:text="${ts.tenTruSo}"
+                  ></option>
+                </select>
+              </div>
+
+              <div id="new-station-fields">
+                <input
+                  type="text"
+                  name="tenTruSo"
+                  placeholder="Tên trụ sở mới"
+                />
+                <input
+                  type="text"
+                  name="tenDangNhap"
+                  placeholder="Tên đăng nhập"
+                />
+                <input type="password" name="matKhau" placeholder="Mật khẩu" />
+              </div>
+
+              <button
+                type="button"
+                onclick="handleSosSubmit()"
+                style="background: #e74c3c; width: 100%; margin-top: 10px"
+              >
+                <i class="fa-solid fa-location-dot"></i> Xác nhận vị trí
+              </button>
+            </form>
+          </div>
+
+          <div id="form-camera" class="side-panel">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+              "
+            >
+              <h3 style="margin: 0; color: #1e293b">
+                <i class="fa-solid fa-camera"></i>
+                <span>Thiết lập Camera</span>
+              </h3>
+              <button
+                type="button"
+                onclick="closeCameraPanel()"
+                style="background: none; border: none; cursor: pointer"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <form id="cameraSubmitForm" enctype="multipart/form-data">
+              <div style="display: flex; gap: 5px; margin-bottom: 10px">
+                <div style="flex: 1">
+                  <label style="font-size: 11px; color: #64748b"
+                    >Vĩ độ (Lat)</label
+                  >
+                  <input
+                    type="text"
+                    name="viDo"
+                    class="lat-field"
+                    readonly
+                    style="
+                      width: 100%;
+                      padding: 8px;
+                      border: 1px solid #e2e8f0;
+                      border-radius: 6px;
+                      background: #f8fafc;
+                    "
+                  />
+                </div>
+                <div style="flex: 1">
+                  <label style="font-size: 11px; color: #64748b"
+                    >Kinh độ (Lng)</label
+                  >
+                  <input
+                    type="text"
+                    name="kinhDo"
+                    class="lng-field"
+                    readonly
+                    style="
+                      width: 100%;
+                      padding: 8px;
+                      border: 1px solid #e2e8f0;
+                      border-radius: 6px;
+                      background: #f8fafc;
+                    "
+                  />
+                </div>
+              </div>
+
+              <div
+                style="
+                  background: #eff6ff;
+                  padding: 12px;
+                  border-radius: 8px;
+                  margin-bottom: 15px;
+                  border: 1px solid #dbeafe;
+                "
+              >
+                <label
+                  style="
+                    font-size: 12px;
+                    font-weight: 600;
+                    display: block;
+                    margin-bottom: 5px;
+                  "
+                  >Chọn mục tiêu:</label
+                >
+                <select
+                  name="id"
+                  id="select-camera"
+                  onchange="toggleFormMode()"
+                  style="
+                    width: 100%;
+                    padding: 8px;
+                    border-radius: 6px;
+                    border: 1px solid #bfdbfe;
+                  "
+                >
+                  <option value="">-- TẠO CAMERA MỚI --</option>
+                  <option
+                    th:each="cam : ${listCameraChuaGan}"
+                    th:value="${cam.id}"
+                    th:text="${cam.tenCamera}"
+                  ></option>
+                </select>
+              </div>
+
+              <div id="camera-fields-group">
+                <div class="form-group" style="margin-bottom: 12px">
+                  <label
+                    style="font-size: 13px; font-weight: 600; color: #475569"
+                    >Tên Camera <span style="color: red">*</span></label
+                  >
+                  <input
+                    type="text"
+                    name="tenCamera"
+                    id="inputTenCamera"
+                    placeholder="VD: Camera Vòng Xoay A"
+                    style="
+                      width: 100%;
+                      padding: 10px;
+                      border: 1px solid #e2e8f0;
+                      border-radius: 8px;
+                      box-sizing: border-box;
+                    "
+                  />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px">
+                  <label
+                    style="font-size: 13px; font-weight: 600; color: #475569"
+                    >Miêu tả vị trí</label
+                  >
+                  <textarea
+                    name="moTa"
+                    id="inputMoTa"
+                    rows="2"
+                    placeholder="Vị trí lắp đặt chi tiết..."
+                    style="
+                      width: 100%;
+                      padding: 10px;
+                      border: 1px solid #e2e8f0;
+                      border-radius: 8px;
+                      box-sizing: border-box;
+                      font-family: inherit;
+                    "
+                  ></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px">
+                  <label
+                    style="font-size: 13px; font-weight: 600; color: #475569"
+                    >Ảnh chụp thực tế</label
+                  >
+                  <input
+                    type="file"
+                    name="anhCamera"
+                    accept="image/*"
+                    style="width: 100%; font-size: 12px"
+                  />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px">
+                  <label
+                    style="font-size: 13px; font-weight: 600; color: #475569"
+                    >Video luồng (MP4)</label
+                  >
+                  <input
+                    type="file"
+                    name="videoFile"
+                    accept="video/*"
+                    style="width: 100%; font-size: 12px"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onclick="handleCameraSubmit()"
+                style="
+                  width: 100%;
+                  padding: 12px;
+                  background: #2563eb;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  margin-top: 10px;
+                "
+              >
+                <i class="fa-solid fa-cloud-arrow-up"></i> Xác nhận lưu hệ thống
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- KHỞI TẠO BIẾN TOÀN CỤC ---
+      let incidentMarkersMap = {};
+      let notificationCount = 0;
+      let truSoMarkersList = [];
+      let cameraMarkersList = [];
+
+      // --- MAPBOX CONFIGURATION ---
+      const MAPBOX_TOKEN = "[[${mapboxToken}]]";
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+
+      const savedLng = localStorage.getItem("map_lng");
+      const savedLat = localStorage.getItem("map_lat");
+      const savedZoom = localStorage.getItem("map_zoom");
+
+      const initialCenter =
+        savedLng && savedLat
+          ? [parseFloat(savedLng), parseFloat(savedLat)]
+          : [106.660172, 10.762622];
+      const initialZoom = savedZoom ? parseFloat(savedZoom) : 16;
+
+      const map = new mapboxgl.Map({
+        container: "adminMap",
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: initialCenter,
+        zoom: initialZoom,
+        pitch: 60,
+        bearing: -20,
+        antialias: true,
+      });
+    </script>
+    <script th:src="@{/js/admin/trang-chu.js}"></script>
+    <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+  </body>
+</html>

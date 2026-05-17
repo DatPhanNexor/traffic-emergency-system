@@ -1,0 +1,363 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quản Lý Quà</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/quan-ly-qua.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+
+  <body>
+    <div id="main-container">
+      <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+      <div class="main-content">
+        <h2 class="page-title">Quản Lý Quà & Voucher</h2>
+
+        <form
+          id="formAddQua"
+          th:object="${quaDto}"
+          enctype="multipart/form-data"
+          class="row g-3 bg-white p-4 rounded shadow-sm"
+        >
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Tên quà / Voucher</label>
+            <input
+              type="text"
+              th:field="*{ten}"
+              class="form-control"
+              required
+              placeholder="Nhập tên..."
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Loại</label>
+            <select th:field="*{loai}" id="selectLoaiQua" class="form-select">
+              <option
+                th:each="l : ${loaiQua}"
+                th:value="${l}"
+                th:text="${l}"
+              ></option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Điểm đổi</label>
+            <input
+              type="number"
+              th:field="*{diem}"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-bold">Mô tả</label>
+            <textarea
+              th:field="*{moTa}"
+              class="form-control"
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="col-12" id="voucherFields" style="display: none">
+            <div
+              class="p-3 border rounded"
+              style="
+                background-color: #f8faff;
+                border-color: #3b82f6 !important;
+              "
+            >
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label text-primary fw-bold"
+                    >Giá trị giảm (%)</label
+                  >
+                  <input
+                    type="number"
+                    th:field="*{giaTriGiamPercent}"
+                    class="form-control"
+                    placeholder="Ví dụ: 20"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-primary fw-bold"
+                    >Giảm tối đa (VNĐ)</label
+                  >
+                  <input
+                    type="number"
+                    th:field="*{giaTriToiDa}"
+                    class="form-control"
+                    placeholder="Ví dụ: 50000"
+                  />
+                </div>
+              </div>
+              <div class="form-text text-primary mt-2">
+                <i class="fa-solid fa-info-circle"></i> Chỉ áp dụng cho loại
+                hình Voucher cứu trợ.
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Ngày kết thúc</label>
+            <input
+              type="datetime-local"
+              th:field="*{ngayKetThuc}"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-bold">Hình ảnh</label>
+            <input type="file" name="hinhAnh" class="form-control" />
+          </div>
+
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fa-solid fa-save me-2"></i>Lưu Thông Tin
+            </button>
+          </div>
+        </form>
+
+        <hr class="my-5" />
+
+        <h4 class="mb-3">Danh sách Quà & Voucher</h4>
+        <table class="table table-bordered align-middle bg-white shadow-sm">
+          <thead class="table-light text-center">
+            <tr>
+              <th>ID</th>
+              <th>Hình ảnh</th>
+              <th>Tên</th>
+              <th>Loại</th>
+              <th>Điểm</th>
+              <th>Cấu hình Voucher</th>
+              <th>Thời hạn</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="q : ${listQua}">
+              <td class="text-center" th:text="${q.id}"></td>
+              <td class="text-center">
+                <img
+                  th:src="@{'/uploads/' + ${q.hinhAnh}}"
+                  width="50"
+                  height="50"
+                  class="rounded border"
+                />
+              </td>
+              <td th:text="${q.ten}" class="fw-bold"></td>
+              <td class="text-center">
+                <span
+                  th:class="${q.loai.name() == 'VOUCHER' ? 'badge bg-info' : 'badge bg-secondary'}"
+                  th:text="${q.loai}"
+                ></span>
+              </td>
+              <td class="text-center" th:text="${q.diem}"></td>
+              <td>
+                <div th:if="${q.loai.name() == 'VOUCHER'}">
+                  <small class="d-block text-success"
+                    >Giảm: <b th:text="${q.giaTriGiamPercent}"></b>%</small
+                  >
+                  <small class="d-block text-danger"
+                    >Tối đa:
+                    <b
+                      th:text="${#numbers.formatDecimal(q.giaTriToiDa, 0, 'COMMA', 0, 'POINT')}"
+                    ></b
+                    >đ</small
+                  >
+                </div>
+                <span
+                  th:unless="${q.loai.name() == 'VOUCHER'}"
+                  class="text-muted small"
+                  >N/A</span
+                >
+              </td>
+
+              <td class="text-center">
+                <span
+                  th:if="${q.ngayKetThuc != null}"
+                  th:text="${#temporals.format(q.ngayKetThuc, 'dd/MM/yyyy HH:mm')}"
+                >
+                </span>
+                <span th:if="${q.ngayKetThuc == null}">Không giới hạn</span>
+              </td>
+              <td class="text-center">
+                <!-- Nếu đã hết hạn -->
+                <span
+                  th:if="${q.ngayKetThuc != null 
+      and q.ngayKetThuc.isBefore(T(java.time.LocalDateTime).now())}"
+                  class="badge bg-danger"
+                >
+                  Hết hạn
+                </span>
+
+                <!-- Nếu chưa hết hạn -->
+                <div
+                  th:if="${q.ngayKetThuc == null 
+      or q.ngayKetThuc.isAfter(T(java.time.LocalDateTime).now())}"
+                >
+                  <select
+                    class="form-select form-select-sm"
+                    th:data-id="${q.id}"
+                    onchange="changeStatus(this)"
+                  >
+                    <option
+                      value="HOAT_DONG"
+                      th:selected="${q.trangThai.name() == 'HOAT_DONG'}"
+                    >
+                      Hoạt động
+                    </option>
+
+                    <option
+                      value="NGUNG"
+                      th:selected="${q.trangThai.name() == 'NGUNG'}"
+                    >
+                      Ngưng
+                    </option>
+                  </select>
+                </div>
+              </td>
+              <td class="text-center">
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  onclick="openEditModal(this)"
+                  th:data-id="${q.id}"
+                  th:data-ten="${q.ten}"
+                  th:data-mota="${q.moTa}"
+                  th:data-loai="${q.loai}"
+                  th:data-diem="${q.diem}"
+                  th:data-hinhanh="${q.hinhAnh}"
+                  th:data-giam="${q.giaTriGiamPercent}"
+                  th:data-toida="${q.giaTriToiDa}"
+                  th:data-ngayketthuc="${#temporals.format(q.ngayKetThuc, 'yyyy-MM-dd''T''HH:mm')}"
+                >
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  th:onclick="'deleteQua(' + ${q.id} + ')'"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <h4 class="mb-4">Chỉnh sửa quà / voucher</h4>
+
+        <input type="hidden" id="editId" />
+
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold">Tên</label>
+          <div class="col-8">
+            <input id="editTen" class="form-control" />
+          </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold">Hình ảnh</label>
+          <div class="col-8">
+            <img
+              id="previewHinhAnh"
+              style="width: 80px; height: 80px; border-radius: 8px"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold"></label>
+          <div class="col-8">
+            <input id="editHinhAnh" type="file" class="form-control" />
+          </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold">Mô tả</label>
+          <div class="col-8">
+            <textarea id="editMoTa" class="form-control"></textarea>
+          </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold">Loại</label>
+          <div class="col-8">
+            <select
+              id="editLoai"
+              class="form-select"
+              onchange="toggleEditVoucherFields()"
+            >
+              <option value="SAN_PHAM">Sản phẩm</option>
+              <option value="VOUCHER">Voucher</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold">Điểm đổi</label>
+          <div class="col-8">
+            <input id="editDiem" type="number" class="form-control" />
+          </div>
+        </div>
+
+        <!-- Voucher fields -->
+        <div id="editVoucherFields" style="display: none">
+          <div class="row mb-3 align-items-center">
+            <label class="col-4 text-primary fw-bold">% giảm</label>
+            <div class="col-8">
+              <input id="editGiam" type="number" class="form-control" />
+            </div>
+          </div>
+
+          <div class="row mb-3 align-items-center">
+            <label class="col-4 text-primary fw-bold">Giảm tối đa</label>
+            <div class="col-8">
+              <input id="editToiDa" type="number" class="form-control" />
+            </div>
+          </div>
+        </div>
+        <div class="row mb-3 align-items-center">
+          <label class="col-4 fw-bold">Ngày kết thúc</label>
+          <div class="col-8">
+            <input
+              id="editNgayKetThuc"
+              type="datetime-local"
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button onclick="submitEdit()" class="btn btn-success w-100">
+            💾 Lưu
+          </button>
+          <button onclick="closeModal()" class="btn btn-secondary w-100">
+            ❌ Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+    <script th:src="@{/js/admin/quan-ly-qua.js}"></script>
+    <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+  </body>
+</html>

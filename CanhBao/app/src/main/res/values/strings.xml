@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">CanhBao</string>
+    <string name="default_web_client_id">
+        282198564306-63jj40ravcqagea2tqqpr43gn24ogtms.apps.googleusercontent.com
+    </string>
+</resources>

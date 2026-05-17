@@ -1,0 +1,153 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quản lý Gói Cứu Hộ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ICON & FONT -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- BOOTSTRAP -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/quan-ly-goi.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+
+  <body>
+    <div id="main-container">
+      <!-- ===== SIDEBAR ===== -->
+      <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+      <!-- ===== MAIN CONTENT ===== -->
+      <div class="main-content">
+        <h2 class="page-title">Hệ thống Quản lý Gói SOS</h2>
+
+        <!-- FORM -->
+        <div class="card mb-5 border-0 shadow-sm">
+          <div class="card-header bg-primary text-white fw-bold">
+            Thêm Gói Cứu Hộ Mới
+          </div>
+          <div class="card-body">
+            <form id="formGoi" class="row g-3" th:object="${goiMoi}">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Tên gói</label>
+                <input
+                  type="text"
+                  th:field="*{ten}"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label fw-semibold">Thời hạn (Ngày)</label>
+                <input
+                  type="number"
+                  th:field="*{thoiHan}"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Giá (VNĐ)</label>
+                <input
+                  type="number"
+                  th:field="*{gia}"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">KM Miễn phí</label>
+                <input
+                  type="number"
+                  th:field="*{khoangCachMienPhi}"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Ưu đãi & Mô tả</label>
+                <textarea
+                  th:field="*{uuDai}"
+                  class="form-control"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <div class="col-12 text-end">
+                <button type="submit" class="btn btn-success px-5">
+                  Lưu Gói
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-dark text-white fw-bold">
+            Danh sách các gói
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Tên gói</th>
+                  <th>Thời hạn</th>
+                  <th>Giá</th>
+                  <th>KM</th>
+                  <th style="width: 250px">Ưu đãi</th>
+                  <th class="text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="g : ${listGoi}">
+                  <td th:text="${g.id}"></td>
+                  <td th:text="${g.ten}" class="fw-bold"></td>
+                  <td th:text="${g.thoiHan} + 'd'"></td>
+                  <td
+                    th:text="${#numbers.formatDecimal(g.gia, 0, 'COMMA', 0, 'POINT')} + 'đ'"
+                  ></td>
+                  <td th:text="${g.khoangCachMienPhi} + 'km'"></td>
+                  <td>
+                    <div
+                      class="truncate-text"
+                      th:title="${g.uuDai}"
+                      th:text="${g.uuDai}"
+                    ></div>
+                  </td>
+                  <td class="text-center">
+                    <button
+                      class="btn btn-outline-danger btn-sm"
+                      th:onclick="'deleteGoi(' + ${g.id} + ')'"
+                    >
+                      Xóa
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script th:src="@{/js/admin/quan-ly-goi.js}"></script>
+    <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+  </body>
+</html>

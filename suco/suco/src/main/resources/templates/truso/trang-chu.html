@@ -1,0 +1,154 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hệ thống Điều hành Cứu trợ</title>
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/fragments/truso/sidebar.css}" />
+    <link rel="stylesheet" th:href="@{/css/truso/trang-chu.css}" />
+  </head>
+  <body>
+    <div th:replace="fragments/truso/sidebar :: sidebar('map')"></div>
+
+    <main class="main-content">
+      <div
+        id="noti-bell"
+        onclick="toggleNotiList()"
+        style="
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          z-index: 1000;
+          cursor: pointer;
+        "
+      >
+        <div
+          style="
+            background: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            border: 1px solid #e2e8f0;
+          "
+        >
+          <i
+            class="fa-solid fa-bell"
+            style="font-size: 20px; color: #1e293b"
+          ></i>
+          <span
+            id="noti-count"
+            style="
+              position: absolute;
+              top: -5px;
+              right: -5px;
+              background: #ef4444;
+              color: white;
+              border-radius: 50%;
+              width: 20px;
+              height: 20px;
+              font-size: 11px;
+              font-weight: bold;
+              display: none;
+              align-items: center;
+              justify-content: center;
+              border: 2px solid white;
+              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+              line-height: 1;
+            "
+            >0</span
+          >
+        </div>
+
+        <div
+          id="noti-list"
+          style="
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #eee;
+            overflow: hidden;
+          "
+        >
+          <div
+            style="
+              padding: 12px;
+              background: #f8fafc;
+              border-bottom: 1px solid #eee;
+              font-weight: bold;
+              font-size: 14px;
+              display: flex;
+              justify-content: space-between;
+            "
+          >
+            <span>Thông báo mới</span>
+            <span
+              onclick="clearNoti(event)"
+              style="color: #ef4444; font-size: 11px; cursor: pointer"
+              >Xóa tất cả</span
+            >
+          </div>
+          <div
+            id="noti-items-container"
+            style="max-height: 350px; overflow-y: auto"
+          >
+            <div
+              id="empty-noti"
+              style="
+                padding: 20px;
+                text-align: center;
+                color: #94a3b8;
+                font-size: 13px;
+              "
+            >
+              Không có thông báo mới
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="sos-detail-panel">
+        <div class="panel-header">
+          <span
+            ><i class="fa-solid fa-circle-info"></i> THÔNG TIN CHI TIẾT</span
+          >
+          <i
+            class="fa-solid fa-xmark"
+            style="cursor: pointer"
+            onclick="closeDetail()"
+          ></i>
+        </div>
+        <div class="panel-body" id="panel-content"></div>
+      </div>
+      <div id="map"></div>
+    </main>
+
+    <script th:inline="javascript">
+      const idTruSo = /*[[${session.currentTruSo.id}]]*/ 0;
+      const tsLng = /*[[${session.currentTruSo.kinhDo}]]*/ 106.660172;
+      const tsLat = /*[[${session.currentTruSo.viDo}]]*/ 10.762622;
+
+      const MAPBOX_TOKEN = /*[[${mapboxToken}]]*/ "";
+    </script>
+    <script th:src="@{/js/truso/trang-chu.js}"></script>
+    <script th:src="@{/js/fragments/truso/sidebar.js}"></script>
+  </body>
+</html>

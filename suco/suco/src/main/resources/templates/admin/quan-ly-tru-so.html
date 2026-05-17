@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý trụ sở - SOS System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/quan-ly-tru-so.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+  <body>
+    <div id="main-container">
+            <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+
+      <div class="main-content">
+        <div class="header-section">
+          <h2 class="header-title">Quản Lý Danh Sách Trụ Sở</h2>
+          <button class="btn-add" onclick="openModal()">
+            <i class="fa-solid fa-plus"></i> Thêm trụ sở mới
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              id="searchInput"
+              onkeyup="filterTable()"
+              placeholder="Tìm kiếm tên trụ sở hoặc tài khoản..."
+            />
+          </div>
+          <select
+            style="
+              padding: 10px;
+              border-radius: 8px;
+              border: 1px solid #e2e8f0;
+              color: #64748b;
+            "
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="ready">Đã có vị trí</option>
+            <option value="pending">Chưa có vị trí</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table id="stationTable">
+            <thead>
+              <tr>
+                <th>Tên trụ sở</th>
+                <th>Tài khoản</th>
+                <th>Tọa độ (Kinh độ, Vĩ độ)</th>
+                <th>Trạng thái</th>
+                <th style="text-align: center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="st : ${danhSachTruSo}">
+                <td th:text="${st.tenTruSo}" style="font-weight: 600"></td>
+                <td th:text="${st.tenDangNhap}"></td>
+                <td>
+                  <span
+                    th:if="${st.kinhDo != 0}"
+                    th:text="${st.kinhDo} + ', ' + ${st.viDo}"
+                  ></span>
+                  <span
+                    th:if="${st.kinhDo == 0}"
+                    style="color: #94a3b8; font-style: italic"
+                    >Chưa gán vị trí</span
+                  >
+                </td>
+                <td>
+                  <span
+                    th:class="${st.kinhDo != 0 ? 'status-badge status-ready' : 'status-badge status-pending'}"
+                    th:text="${st.kinhDo != 0 ? 'Đã sẵn sàng' : 'Chờ định vị'}"
+                  >
+                  </span>
+                </td>
+                <td style="text-align: center">
+                  <a
+                    th:href="@{/admin/trang-chu(assignId=${st.id})}"
+                    class="btn-action btn-edit"
+                    title="Gán vị trí trên bản đồ"
+                  >
+                    <i class="fa-solid fa-location-crosshairs"></i> Gán tọa độ
+                  </a>
+                  <button 
+    type="button"
+    class="btn-action btn-delete"
+    th:onclick="'confirmDeleteTruSo(' + ${st.id} + ')'">
+    <i class="fa-solid fa-trash"></i>
+</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+
+    <div id="addModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin: 0">Thêm Trụ Sở Mới</h3>
+      <i class="fa-solid fa-xmark" style="cursor: pointer" onclick="closeModal()"></i>
+    </div>
+    <form id="addStationForm" onsubmit="handleStationSubmit(event)">
+      <div class="form-group">
+        <label>Tên trụ sở</label>
+        <input type="text" name="tenTruSo" placeholder="Ví dụ: Trạm cứu hỏa Quận 1" required />
+      </div>
+      <div class="form-group">
+        <label>Tài khoản đăng nhập</label>
+        <input type="text" name="tenDangNhap" required />
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <input type="password" name="matKhau" required />
+      </div>
+
+      <input type="hidden" name="kinhDo" value="0" />
+      <input type="hidden" name="viDo" value="0" />
+
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal()" style="padding: 10px 20px; border: none; background: #f1f5f9; border-radius: 8px; cursor: pointer;">
+          Hủy
+        </button>
+        <button type="submit" class="btn-add">Lưu thông tin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+  <script th:src="@{/js/admin/quan-ly-tru-so.js}"></script>
+      <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+
+  </body>
+</html>

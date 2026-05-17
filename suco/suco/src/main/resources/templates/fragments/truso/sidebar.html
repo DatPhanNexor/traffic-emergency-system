@@ -1,0 +1,60 @@
+<div th:fragment="sidebar(activePage)">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2
+        style="
+          font-size: 1.35rem;
+          margin: 0;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #fff;
+          line-height: 1.2;
+        "
+      >
+        <i class="fa-solid fa-shield-heart" style="color: #fff"></i>
+        <span>SOS Admin</span>
+      </h2>
+
+      <!-- NÚT THU GỌN -->
+      <button class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-chevron-left" id="toggle-icon"></i>
+      </button>
+    </div>
+
+    <nav class="nav-menu">
+      <a
+        href="/truso/trang-chu"
+        th:class="${activePage == 'map'} ? 'nav-item active' : 'nav-item'"
+      >
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Bản đồ khẩn cấp</span>
+      </a>
+
+      <a
+        href="/truso/quan-ly-cuu-tro"
+        th:class="${activePage == 'pending'} ? 'nav-item active' : 'nav-item'"
+      >
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Đang chờ cứu trợ</span>
+      </a>
+
+      <a
+        href="/truso/dang-cuu-tro"
+        th:class="${activePage == 'doing'} ? 'nav-item active' : 'nav-item'"
+      >
+        <i class="fa-solid fa-truck-medical"></i>
+        <span>Đang cứu trợ</span>
+      </a>
+
+      <a
+        href="/truso/lich-su-cuu-tro"
+        th:class="${activePage == 'history'} ? 'nav-item active' : 'nav-item'"
+      >
+        <i class="fa-solid fa-list-check"></i>
+        <span>Lịch sử cứu trợ</span>
+      </a>
+    </nav>
+  </aside>
+</div>

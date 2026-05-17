@@ -1,0 +1,90 @@
+/* 2. SIDEBAR (Giống hệt các trang khác) */
+#sidebar {
+  width: var(--sidebar-width);
+  background: var(--primary-color);
+  color: white;
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
+}
+
+#sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  min-height: 70px;
+  box-sizing: border-box;
+}
+
+.sidebar-header span {
+  white-space: nowrap;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+#sidebar.collapsed .sidebar-header span {
+  display: none;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 15px 0;
+  margin: 0;
+
+  flex-grow: 0; /* ❌ bỏ stretch */
+  flex: none; /* ✔ cố định */
+  overflow-y: auto; /* nếu dài thì scroll */
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 25px;
+  color: #aaa;
+  text-decoration: none;
+  transition: 0.2s;
+  white-space: nowrap;
+  border-left: 4px solid transparent;
+}
+
+.menu-item:hover,
+.menu-item.active {
+  background: #262626;
+  color: white;
+  border-left-color: var(--accent-color);
+}
+
+.menu-item i {
+  min-width: 25px;
+  text-align: center;
+  font-size: 18px;
+}
+.menu-item span {
+  margin-left: 15px;
+  font-weight: 500;
+}
+
+#sidebar.collapsed .menu-item span {
+  display: none;
+}
+#sidebar.collapsed .menu-item {
+  justify-content: center;
+  padding: 15px 0;
+}
+#sidebar {
+  height: 100vh;
+}
+.toggle-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+}

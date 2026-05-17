@@ -1,0 +1,179 @@
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 75px;
+  --primary-color: #1a1a1a;
+  --accent-color: #3b82f6;
+  --font-main: "Inter", system-ui, sans-serif;
+}
+
+/* 1. LAYOUT CHÍNH */
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-main);
+  background-color: #f8fafc;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#main-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+/* 3. NỘI DUNG CHÍNH */
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+.header-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 30px;
+  border-left: 5px solid var(--accent-color);
+  padding-left: 15px;
+}
+
+/* 4. FORM TẠO MỚI */
+.form-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+}
+
+.form-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+input[type="text"],
+input[type="file"] {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: var(--font-main);
+}
+
+.btn-create {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 11px 25px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-create:hover {
+  background: #2563eb;
+}
+
+/* 5. BẢNG DANH SÁCH */
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th {
+  background: #f8fafc;
+  padding: 15px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+td {
+  padding: 15px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.icon-preview {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.btn-edit {
+  background: #dbeafe;
+  color: #3b82f6;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 5px;
+}
+.btn-edit:hover {
+  background: #bfdbfe;
+}
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background: white;
+  width: 400px;
+  margin: 10% auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+.btn-delete {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-delete:hover {
+  background: #fecaca;
+}

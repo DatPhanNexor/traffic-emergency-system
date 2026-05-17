@@ -1,0 +1,398 @@
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 75px;
+  --primary-color: #1a1a1a;
+  --accent-color: #3b82f6;
+  --glass-bg: rgba(255, 255, 255, 0.9);
+}
+
+/* 1. KHÓA MÀN HÌNH KHÔNG CHO CUỘN */
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+  overflow: hidden !important; /* Tuyệt đối không cho cuộn trang */
+  position: fixed; /* Chặn hiệu ứng lò xo trên mobile */
+}
+
+#main-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- MAP AREA & CONTROLS --- */
+#map-wrapper {
+  flex-grow: 1;
+  position: relative;
+  height: 100%;
+}
+#adminMap {
+  width: 100%;
+  height: 100%;
+}
+
+/* Container chứa thanh công cụ icon */
+#map-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: row; /* Xếp hàng ngang */
+  gap: 5px;
+  z-index: 1001;
+  background: rgba(26, 26, 26, 0.85); /* Nền tối để icon trắng nổi bật */
+  backdrop-filter: blur(10px);
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.control-tab {
+  width: 45px;
+  height: 45px;
+  background: transparent; /* Để lộ nền của container */
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 18px;
+  color: #ffffff; /* Icon màu trắng */
+}
+
+.control-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.control-tab.active {
+  background: var(--accent-color);
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* --- SIDE PANELS (CÓ CUỘN NỘI BỘ NẾU FORM DÀI) --- */
+.side-panel {
+  position: absolute;
+  top: 20px;
+  right: -350px;
+  width: 300px;
+  max-height: calc(100vh - 40px); /* Không bao giờ cao hơn màn hình */
+  overflow-y: auto; /* Nếu form dài quá thì tự cuộn trong form */
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.side-panel.open {
+  right: 20px;
+  top: 85px; /* Đẩy xuống dưới thanh icon */
+}
+
+.side-panel h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+.side-panel input,
+.side-panel select,
+.side-panel button {
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+.side-panel button {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* --- MARKERS STYLES --- */
+.custom-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+}
+.marker-pin {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: white;
+  border: 4px solid;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  z-index: 2;
+}
+.marker-icon {
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.marker-tail {
+  width: 4px;
+  height: 10px;
+  margin-top: -2px;
+  z-index: 1;
+}
+
+/* --- MOBILE FIXES --- */
+#mobile-toggle {
+  display: none;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 1002;
+  background: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  #mobile-toggle {
+    display: block;
+  }
+  #sidebar {
+    position: absolute;
+    left: -260px;
+    height: 100%;
+  }
+  #sidebar.mobile-open {
+    left: 0;
+  }
+  .side-panel.open {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    bottom: 20px;
+    top: auto;
+  }
+}
+#notification-bell {
+  position: absolute;
+  top: 20px;
+  right: 215px; /* Đặt cách cụm điều khiển hiện tại một khoảng */
+  width: 50px;
+  height: 50px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1001;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+#notification-bell:hover {
+  transform: scale(1.1);
+  background: #f8f9fa;
+}
+
+#notification-bell i {
+  font-size: 20px;
+}
+
+#notification-bell .badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444; /* Màu đỏ thông báo */
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 2px solid white;
+  font-weight: bold;
+}
+
+/* Hiệu ứng rung nhẹ khi có thông báo mới (Optional) */
+.ring-animation {
+  animation: ring 2s infinite;
+}
+
+@keyframes ring {
+  0% {
+    transform: rotate(0);
+  }
+  10% {
+    transform: rotate(15deg);
+  }
+  20% {
+    transform: rotate(-15deg);
+  }
+  30% {
+    transform: rotate(10deg);
+  }
+  40% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+.notification-dropdown {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: none; /* Mặc định ẩn */
+  z-index: 1002;
+  overflow: hidden;
+  color: #333;
+}
+
+.notification-dropdown.show {
+  display: block;
+}
+
+.dropdown-header {
+  padding: 15px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.notification-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-item:hover {
+  background: #f0f7ff;
+}
+
+.notification-item .time {
+  font-size: 11px;
+  color: #888;
+  margin-top: 5px;
+}
+
+.no-notification {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+}
+
+/* --- SỬA LẠI MARKER STYLES ĐỂ KHÔNG BỊ LỆCH TỌA ĐỘ --- */
+
+.custom-marker {
+  /* Ép kích thước cố định để Mapbox tính toán anchor 'bottom' chuẩn */
+  width: 45px;
+  height: 55px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  /* Giữ nguyên transform của Mapbox, không thêm animation transform vào đây */
+}
+
+.marker-pin {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: white;
+  border: 4px solid;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 2;
+}
+
+.marker-tail {
+  width: 4px;
+  height: 10px;
+  margin-top: -2px; /* Dính liền với pin */
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+/* --- HIỆU ỨNG NHẤP NHÁY CHO AI_APPROVED / PENDING --- */
+/* Thay vì scale (làm lệch tọa độ), chúng ta dùng box-shadow và opacity */
+.pending-marker .marker-pin {
+  animation: pulse-border 1.5s infinite;
+  border-color: #3498db !important; /* Luôn là màu xanh dương nếu đang chờ */
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(52, 152, 219, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+  }
+}
+
+/* Nếu bạn vẫn muốn Marker to nhỏ, hãy tạo một class con bên trong để scale 
+   nhằm tránh làm ảnh hưởng đến thẻ cha .custom-marker đang giữ tọa độ */
+.pending-marker .marker-pin i {
+  animation: pulse-icon 1.5s infinite;
+}
+
+@keyframes pulse-icon {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Đảm bảo icon bên trong ghim không bị lệch */
+.marker-icon {
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}

@@ -1,0 +1,244 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản Lý Báo Cáo Sự Cố</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/bao-cao-su-co.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+  <body>
+    <div id="main-container">
+      <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+      <div class="main-content">
+        <div class="header-area">
+          <h2 class="header-title">Duyệt nhanh (Chờ duyệt)</h2>
+          <div style="display: flex; gap: 10px">
+            <button
+              class="toggle-btn"
+              style="color: #333"
+              onclick="prevPendingPage()"
+            >
+              <i class="fa-solid fa-circle-arrow-left"></i>
+            </button>
+            <button
+              class="toggle-btn"
+              style="color: #333"
+              onclick="nextPendingPage()"
+            >
+              <i class="fa-solid fa-circle-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="pending-horizontal-container">
+          <div class="pending-grid" id="pending-slider">
+            <div
+              th:each="suCo : ${listPending}"
+              class="card-mini pending-item"
+              th:id="'pending-report-' + ${suCo.id}"
+              th:data-lat="${suCo.viDo}"
+              th:data-lng="${suCo.kinhDo}"
+            >
+              <img
+                th:src="${suCo.hinhAnhUrl != null ? suCo.hinhAnhUrl : '/images/no-image.png'}"
+                class="card-mini-img"
+              />
+
+              <div class="card-mini-body">
+                <span
+                  style="
+                    color: var(--accent-color);
+                    font-weight: 700;
+                    font-size: 10px;
+                  "
+                  th:text="${suCo.loaiSuCo.ten}"
+                  >SỰ CỐ</span
+                >
+                <span
+                  ><i class="fa-solid fa-user"></i>
+                  <b th:text="${suCo.reporter.name}">Người dân</b></span
+                >
+                <span class="text-truncate" th:title="${suCo.diaChi}">
+                  <i class="fa-solid fa-location-dot"></i> [[${suCo.diaChi !=
+                  null ? suCo.diaChi : 'Không rõ vị trí'}]]
+                </span>
+                <span
+                  >Tin cậy:
+                  <b class="confidence-val" th:text="${suCo.doTinCay}"
+                    >1</b
+                  ></span
+                >
+                <div
+                  th:id="'cam-list-pending-' + ${suCo.id}"
+                  style="display: flex; gap: 5px; margin-top: 5px"
+                ></div>
+              </div>
+
+              <div class="card-mini-actions">
+                <button
+                  class="btn btn-ok"
+                  th:onclick="'verify(' + ${suCo.id} + ', true)'"
+                >
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button
+                  class="btn btn-fail"
+                  th:onclick="'verify(' + ${suCo.id} + ', false)'"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="no-pending-msg"
+              th:style="${#lists.isEmpty(listPending) ? 'display: block' : 'display: none'}"
+              style="
+                width: 100%;
+                text-align: center;
+                padding: 20px;
+                color: #94a3b8;
+              "
+            >
+              <i
+                class="fa-solid fa-bell-slash"
+                style="font-size: 24px; margin-bottom: 10px; display: block"
+              ></i>
+              <span>Hiện chưa có báo cáo mới cần duyệt gấp...</span>
+            </div>
+          </div>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0" />
+        <div class="system-tabs">
+          <div class="tab-item active" onclick="switchTab('all')">
+            Tất cả
+            <span class="tab-count" th:text="${#lists.size(allSuCo)}">0</span>
+          </div>
+          <div class="tab-item" onclick="switchTab('pending')">
+            Chờ xử lý <span class="tab-count" th:text="${countCho}">0</span>
+          </div>
+          <div class="tab-item" onclick="switchTab('processing')">
+            Đang xử lý <span class="tab-count" th:text="${countDang}">0</span>
+          </div>
+          <div class="tab-item" onclick="switchTab('done')">
+            Hoàn thành <span class="tab-count" th:text="${countXong}">0</span>
+          </div>
+          <div class="tab-item" onclick="switchTab('spam')">
+            Spam
+            <span class="tab-count" th:text="${#lists.size(listSpam)}">0</span>
+          </div>
+        </div>
+
+        <div id="incident-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Ảnh</th>
+                <th>Loại</th>
+                <th>Người báo / Email</th>
+                <th>Địa chỉ</th>
+                <th>Tin cậy</th>
+                <th>Trụ sở tiếp nhận</th>
+                <th>Camera gần đó</th>
+              </tr>
+            </thead>
+            <tbody id="table-body-main">
+              <tr
+                th:each="item : ${allSuCo}"
+                class="incident-row"
+                th:id="'report-' + ${item.id}"
+                th:data-lat="${item.viDo}"
+                th:data-lng="${item.kinhDo}"
+                th:data-status="${item.trangThaiXuLy}"
+              >
+                <td th:text="${item.id}"></td>
+                <td><img th:src="${item.hinhAnhUrl}" class="img-table" /></td>
+                <td th:text="${item.loaiSuCo.ten}"></td>
+                <td>
+                  <div th:text="${item.reporter.name}"></div>
+                  <div
+                    style="font-size: 11px; color: #94a3b8"
+                    th:text="${item.reporter.email}"
+                  ></div>
+                </td>
+                <td th:text="${item.diaChi}"></td>
+                <td class="confidence-val" th:text="${item.doTinCay}"></td>
+
+                <td>
+                  <span
+                    th:if="${item.trangThaiXuLy == 'CHO_XU_LY'}"
+                    style="color: #f59e0b; font-style: italic"
+                    >Đang chờ...</span
+                  >
+                  <span
+                    th:if="${item.trangThaiXuLy != 'CHO_XU_LY'}"
+                    th:text="${'Trụ sở #' + item.idTruSoTiepNhan}"
+                  ></span>
+                </td>
+
+                <td>
+                  <div
+                    th:id="'cam-area-' + ${item.id}"
+                    style="display: none; flex-direction: column; gap: 5px"
+                  >
+                    <div
+                      th:id="'cam-list-' + ${item.id}"
+                      style="display: flex; gap: 5px; flex-wrap: wrap"
+                    ></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="spam-table-container" style="display: none">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>UID Người báo</th>
+                <th>Ảnh</th>
+                <th>Mô tả lỗi</th>
+                <th>Địa chỉ báo sai</th>
+                <th>Thời gian</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="s : ${listSpam}">
+                <td th:text="${s.id}"></td>
+                <td th:text="${s.userId}"></td>
+                <td><img th:src="${s.hinhAnhUrl}" class="img-table" /></td>
+                <td th:text="${s.moTa}"></td>
+                <td th:text="${s.diaChi}"></td>
+                <td
+                  th:text="${#temporals.format(s.thoiGianSpam, 'HH:mm dd/MM/yyyy')}"
+                ></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <script th:src="@{/js/admin/bao-cao-su-co.js}"></script>
+    <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+
+  </body>
+</html>

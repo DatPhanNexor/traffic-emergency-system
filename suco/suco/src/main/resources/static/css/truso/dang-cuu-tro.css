@@ -1,0 +1,144 @@
+html {
+  scrollbar-gutter: stable;
+}
+
+/* compact vertical list */
+#rescue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-sos {
+  width: 100%;
+  padding: 10px 18px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+.badge-pending {
+  background: #fee2e2;
+  color: #ef4444;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+#detail-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: white;
+  z-index: 1001;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: none;
+}
+.card-sos {
+  transition: all 0.2s ease;
+  border: 1px solid #eee;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  background: #fff;
+}
+.card-sos:hover {
+  background: #f8f9fa;
+  border-color: #0d6efd;
+}
+.info-icon {
+  color: #0d6efd;
+  cursor: pointer;
+  margin-left: 6px;
+  font-size: 0.95rem;
+  transition: transform 0.15s;
+}
+.info-icon:hover {
+  transform: scale(1.15);
+  color: #0a58ca;
+}
+/* Toggle button styles for active state */
+#btn-filter-sos.active {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+#btn-filter-su-co.active {
+  background-color: #6c757d !important;
+  color: white !important;
+}
+.btn-group .btn {
+  padding: 8px 16px;
+  border-radius: 8px !important;
+  margin: 0 4px;
+}
+#overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+#detail-panel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  max-height: 85vh;
+  overflow: auto;
+  z-index: 1000;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 12px;
+}
+
+/* Form thanh toán mới tách biệt */
+#payment-panel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 450px;
+  background: white;
+  z-index: 1050; /* Cao hơn detail-panel */
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.vip-badge {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid #bbf7d0;
+}
+.normal-badge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid #fde68a;
+}

@@ -1,0 +1,128 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quản Lý Doanh Thu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+
+    <link rel="stylesheet" th:href="@{/css/admin/quan-ly-doanh-thu.css}" />
+    <link rel="stylesheet" th:href="@{/css/fragments/admin/sidebar.css}" />
+  </head>
+
+  <body>
+    <div id="main-container">
+      <div th:replace="fragments/admin/sidebar :: sidebar"></div>
+
+      <div class="main-content">
+        <h2 class="page-title">Quản Lý Doanh Thu</h2>
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="card text-white bg-success shadow-sm border-0">
+              <div class="card-body p-4">
+                <h6 class="text-uppercase mb-2" style="opacity: 0.8">
+                  Tổng Doanh Thu
+                </h6>
+                <h3
+                  class="card-title mb-0"
+                  th:text="${#numbers.formatDecimal(tongDoanhThu, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                >
+                  0 VNĐ
+                </h3>
+                <small class="mt-2 d-block"
+                  >Tổng số tiền từ hóa đơn đã thanh toán.</small
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="m-0 font-weight-bold text-primary">Danh sách Hóa Đơn</h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="dataTable">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-4">ID</th>
+                    <th>Mã SOS</th>
+                    <th>Người dùng</th>
+                    <th>Nội dung</th>
+                    <th>Thành tiền</th>
+                    <th>Giảm giá</th>
+                    <th>Thực thu</th>
+                    <th class="text-center">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr th:each="hd : ${listHoaDon}">
+                    <td class="ps-4" th:text="${hd.id}">1</td>
+                    <td th:text="${hd.sosId}">101</td>
+                    <td th:text="${hd.userId}">user123</td>
+                    <td th:text="${hd.tenSos}">Cứu hộ xe máy</td>
+                    <td
+                      th:text="${#numbers.formatDecimal(hd.thanhTien, 0, 'COMMA', 0, 'POINT')}"
+                    >
+                      50,000
+                    </td>
+                    <td
+                      th:text="${#numbers.formatDecimal(hd.soTienGiam, 0, 'COMMA', 0, 'POINT')}"
+                    >
+                      0
+                    </td>
+                    <td
+                      th:text="${#numbers.formatDecimal(hd.tongThanhToan, 0, 'COMMA', 0, 'POINT')}"
+                      class="fw-bold text-success"
+                    >
+                      50,000
+                    </td>
+                    <td class="text-center">
+                      <span
+                        th:if="${hd.trangThai == 'PAID'}"
+                        class="badge bg-success"
+                        >Đã thanh toán</span
+                      >
+                      <span
+                        th:if="${hd.trangThai == 'PENDING'}"
+                        class="badge bg-warning text-dark"
+                        >Chờ thanh toán</span
+                      >
+                      <span
+                        th:if="${hd.trangThai != 'PAID' and hd.trangThai != 'PENDING'}"
+                        th:text="${hd.trangThai}"
+                        class="badge bg-secondary"
+                        >Khác</span
+                      >
+                    </td>
+                  </tr>
+                  <tr th:if="${#lists.isEmpty(listHoaDon)}">
+                    <td colspan="8" class="text-center py-4 text-muted">
+                      Không có dữ liệu hóa đơn
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin/quan-ly-doanh-thu.js}"></script>
+    <script th:src="@{/js/fragments/admin/sidebar.js}"></script>
+  </body>
+</html>

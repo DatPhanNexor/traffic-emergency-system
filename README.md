@@ -127,49 +127,139 @@ MySQL Database
 
 ---
 
+# Traffic Emergency System
+
+Traffic Emergency System is a real-time incident reporting and emergency support system.  
+The project includes a Spring Boot backend, MySQL database, phpMyAdmin, Docker setup, and an optional Android client.
+
+---
+
 ### 📥 Step 1: Clone Repository
+
 ```bash
-git clone https://github.com/username/CanhBaoSuCo.git
-cd CanhBaoSuCo
-🐳 Step 2: Run Database (Docker)
+git clone https://github.com/DatPhanNexor/traffic-emergency-system.git
+cd traffic-emergency-system
+```
+
+---
+
+### 🐳 Step 2: Run Database and phpMyAdmin (Docker)
+
+Run the database and phpMyAdmin using Docker:
+
+```bash
 docker-compose up -d
-MySQL default port: 8081
-Can be changed in docker-compose.yml
-🚀 Step 3: Run Backend Server
-cd suco
+```
+
+phpMyAdmin runs at:
+
+```txt
+http://localhost:8081
+```
+
+MySQL runs at:
+
+```txt
+localhost:3307
+```
+
+These ports can be changed in:
+
+```txt
+docker-compose.yml
+```
+
+---
+
+### 🚀 Step 3: Run Backend Server
+
+Go to the backend project folder:
+
+```bash
+cd suco/suco
+```
+
+Run the Spring Boot backend server:
+
+```bash
 mvn spring-boot:run
+```
 
 Backend runs at:
 
-http://localhost:8080
-📱 Step 4: Run Android Client (Optional)
-Open CanhBao in Android Studio
-Configure backend IP address
-Run on emulator or real device
-🧠 System Highlights (CV / Interview)
-Designed scalable RESTful backend for real-time incident management
-Implemented geo-based filtering for proximity detection
-Built emergency SOS routing logic for nearest rescue coordination
-Integrated Google OAuth2 authentication system
-Designed relational database schema for multi-entity system
-Containerized backend and database using Docker
-🧰 Project Structure
-CanhBaoSuCo/
-│
-├── suco/                  # Spring Boot Backend
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   ├── config/
-│   ├── security/
-│   ├── model/
-│   └── dto/
-│
-├── docker-compose.yml     # Infrastructure setup
-└── README.md
-📧 Contact
+```txt
+http://localhost:8082
+```
 
+---
+
+### 📱 Step 4: Run Android Client (Optional)
+
+Open the Android client project in Android Studio.
+
+```txt
+CanhBao
+```
+
+Then follow these steps:
+
+```txt
+1. Configure the backend IP address.
+2. Run the app on an emulator or a real Android device.
+3. Make sure the backend server is running before testing the app.
+```
+
+---
+
+### 🧠 System Highlights (CV / Interview)
+
+```txt
+- Designed a scalable RESTful backend for real-time incident management.
+- Implemented geo-based filtering for proximity detection.
+- Built emergency SOS routing logic for nearest rescue coordination.
+- Integrated Google OAuth2 authentication system.
+- Designed a relational database schema for a multi-entity system.
+- Containerized the database and development environment using Docker.
+```
+
+---
+
+### 🧰 Project Structure
+
+```txt
+traffic-emergency-system/
+│
+├── suco/
+│   └── suco/                         # Spring Boot Backend
+│       ├── src/
+│       │   └── main/
+│       │       ├── java/
+│       │       │   └── com/example/suco/
+│       │       │       ├── config/       # Security and application configuration
+│       │       │       ├── controller/   # REST API controllers
+│       │       │       ├── dto/          # Data transfer objects
+│       │       │       ├── model/        # Entity models
+│       │       │       ├── repository/   # Database repositories
+│       │       │       ├── security/     # Authentication and authorization logic
+│       │       │       └── service/      # Business logic services
+│       │       │
+│       │       └── resources/
+│       │           └── application.properties
+│       │
+│       ├── pom.xml
+│       └── mvnw.cmd
+│
+├── docker-compose.yml                # MySQL and phpMyAdmin setup
+├── README.md
+└── postman/                          # Postman collections and testing evidence
+```
+
+---
+
+### 📧 Contact
+
+```txt
 Author: Dat Phan
 Email: your-email@example.com
-
 Position: Backend Java Spring Intern Candidate
+```

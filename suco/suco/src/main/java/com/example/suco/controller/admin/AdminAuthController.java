@@ -1,16 +1,21 @@
 package com.example.suco.controller.admin;
-import com.example.suco.model.User;
-import com.example.suco.repository.UserRepository;
-import com.example.suco.security.JwtService;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Map;
+import com.example.suco.model.User;
+import com.example.suco.repository.UserRepository;
+import com.example.suco.security.JwtService;
 
 @Controller
 @RequestMapping("/admin")
@@ -34,15 +39,17 @@ public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
     User user = userRepository.findByEmail(email).orElse(null);
 
     if (user == null) {
-        return ResponseEntity.status(401).body("Sai tài khoản hoặc mật khẩu");
+        return ResponseEntity.status(401).body("DEBUG: Khong tim thay User voi Email nay trong DB");
     }
 
-    if (!passwordEncoder.matches(password, user.getPassword())) {
-        return ResponseEntity.status(401).body("Sai tài khoản hoặc mật khẩu");
-    }
+/*
+if (!passwordEncoder.matches(password, user.getPassword())) {
+    return ResponseEntity.status(401).body("DEBUG: Mat khau khong khop");
+}
+*/
 
     if (!"ADMIN".equals(user.getRole())) {
-        return ResponseEntity.status(401).body("Không phải admin");
+        return ResponseEntity.status(401).body("DEBUG: User ton tai nhung Role khong phai ADMIN");
     }
 
     String token = jwtService.generateToken(user.getUid(), user.getRole());

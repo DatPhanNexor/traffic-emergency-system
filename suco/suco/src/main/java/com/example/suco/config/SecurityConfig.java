@@ -6,6 +6,8 @@ import com.example.suco.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -17,13 +19,18 @@ public class SecurityConfig {
     private final CustomAuthEntryPoint customAuthEntryPoint;
 
     public SecurityConfig(FirebaseFilter firebaseFilter,
-                      JwtFilter jwtFilter,
-                      CustomAuthEntryPoint customAuthEntryPoint) {
-    this.firebaseFilter = firebaseFilter;
-    this.jwtFilter = jwtFilter;
-    this.customAuthEntryPoint = customAuthEntryPoint;
-}
+                          JwtFilter jwtFilter,
+                          CustomAuthEntryPoint customAuthEntryPoint) {
+        this.firebaseFilter = firebaseFilter;
+        this.jwtFilter = jwtFilter;
+        this.customAuthEntryPoint = customAuthEntryPoint;
+    }
 
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -43,7 +50,7 @@ public class SecurityConfig {
 
                 // ADMIN ONLY
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/goi/**").hasRole("ADMIN")
+                .requestMatchers("/api/goi/**").permitAll()
 
                 // USER + ADMIN đều vào được (có auth Firebase)
 

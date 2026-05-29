@@ -44,7 +44,7 @@ public class MuaGoiApiController {
         return ResponseEntity.ok(goiService.getAllGoi());
     }
 
-    @PostMapping("/dang-ky")
+    /*@PostMapping("/dang-ky")
     public ResponseEntity<?> dangKyMuaGoi(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Object> request
@@ -70,6 +70,36 @@ public class MuaGoiApiController {
                     
         } catch (Exception e) {
             // LỖI XÁC THỰC: Trả về 401 Unauthorized
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
+        }
+    }*/
+    @PostMapping("/dang-ky")
+    public ResponseEntity<?> dangKyMuaGoi(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody Map<String, Object> request
+    ) {
+        try {
+            String uid = getUidFromHeader(authHeader);
+            Long goiId = Long.valueOf(request.get("goiId").toString());
+            
+            muaGoiService.dangKyGoi(uid, goiId);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "Đăng ký gói thành công"
+            ));
+
+        } catch (RuntimeException e) {
+            // Kiểm tra nếu tin nhắn là "Không tìm thấy gói" thì trả về 404, ngược lại trả về 400
+            if (e.getMessage().contains("Không tìm thấy gói")) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("message", e.getMessage()));
+            }
+            return ResponseEntity.status(400)
+                    .body(Map.of("message", "Lỗi nghiệp vụ: " + e.getMessage()));
+                    
+        } catch (Exception e) {
             return ResponseEntity.status(401)
                     .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
         }

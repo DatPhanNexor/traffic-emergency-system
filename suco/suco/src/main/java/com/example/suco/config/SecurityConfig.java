@@ -50,7 +50,8 @@ public class SecurityConfig {
 
                 // AUTH SYNC USER
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/map/**").authenticated()
+                //.requestMatchers("/api/map/**").authenticated()
+                .requestMatchers("/api/goi/**").hasAuthority("ADMIN")
 
                 .anyRequest().permitAll()
             )

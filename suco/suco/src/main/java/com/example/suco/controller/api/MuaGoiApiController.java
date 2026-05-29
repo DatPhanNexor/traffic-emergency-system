@@ -1,15 +1,21 @@
 package com.example.suco.controller.api;
 
-import com.example.suco.service.MuaGoiService;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.example.suco.service.GoiService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.example.suco.service.GoiService;
+import com.example.suco.service.MuaGoiService;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 
 @RestController
 @RequestMapping("/api/mua-goi")
@@ -38,16 +44,18 @@ public class MuaGoiApiController {
         return ResponseEntity.ok(goiService.getAllGoi());
     }
 
-    // ĐĂNG KÝ GÓI 
     @PostMapping("/dang-ky")
     public ResponseEntity<?> dangKyMuaGoi(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Object> request
     ) {
         try {
+            // Bước 1: Xác thực Token (Nếu sai sẽ nhảy xuống catch Exception cuối cùng)
             String uid = getUidFromHeader(authHeader);
 
             Long goiId = Long.valueOf(request.get("goiId").toString());
+            
+            // Bước 2: Gọi Service xử lý nghiệp vụ
             muaGoiService.dangKyGoi(uid, goiId);
 
             return ResponseEntity.ok(Map.of(
@@ -55,7 +63,13 @@ public class MuaGoiApiController {
                     "message", "Đăng ký gói thành công"
             ));
 
+        } catch (RuntimeException e) {
+            // LỖI NGHIỆP VỤ (Ví dụ: Đã có gói): Trả về 400 Bad Request
+            return ResponseEntity.status(400)
+                    .body(Map.of("message", "Lỗi nghiệp vụ: " + e.getMessage()));
+                    
         } catch (Exception e) {
+            // LỖI XÁC THỰC: Trả về 401 Unauthorized
             return ResponseEntity.status(401)
                     .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
         }

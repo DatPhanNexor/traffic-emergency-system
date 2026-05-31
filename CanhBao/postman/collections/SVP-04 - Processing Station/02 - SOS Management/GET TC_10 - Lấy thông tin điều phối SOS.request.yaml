@@ -1,8 +1,0 @@
-$kind: http-request
-description: |-
-  Lấy thông tin điều phối SOS
-  - Expected: 200 if data exists, 404 if no dispatch data, NOT 500
-  - Requires: Valid {{sos_id}}
-url: http://{{baseUrl}}/api/tin-hieu-sos/dieu-phoi/{{sos_id}}
-method: GET
-order: 7000

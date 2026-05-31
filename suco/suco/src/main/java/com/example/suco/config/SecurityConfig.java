@@ -44,7 +44,7 @@ public class SecurityConfig {
                 // ADMIN ONLY
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/goi/**").hasRole("ADMIN")
-
+                .requestMatchers("/api/admin/quan-ly-user/**").hasRole("ADMIN")
                 // USER + ADMIN đều vào được (có auth Firebase)
 
                 // AUTH SYNC USER

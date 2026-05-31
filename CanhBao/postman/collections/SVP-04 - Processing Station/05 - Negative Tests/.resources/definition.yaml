@@ -1,0 +1,3 @@
+$kind: collection
+description: Negative test cases for error handling and validation
+order: 5000

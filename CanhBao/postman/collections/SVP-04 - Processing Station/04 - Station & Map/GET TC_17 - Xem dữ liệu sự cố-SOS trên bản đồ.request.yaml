@@ -1,0 +1,30 @@
+$kind: http-request
+name: GET TC_17 - Xem dữ liệu sự cố/SOS trên bản đồ
+description: |-
+  Xem dữ liệu sự cố/SOS trên bản đồ theo trụ sở
+  - Expected: Status 200, List of incidents/SOS for map display
+  - Requires: Valid {{truso_id}}
+url: http://{{baseUrl}}/api/map/su-co?idTruSo={{truso_id}}
+method: GET
+queryParams:
+  idTruSo: "{{truso_id}}"
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("Status is 200", function() {
+
+          pm.response.to.have.status(200);
+
+      });
+
+
+
+      pm.test("Response contains data", function() {
+
+          const body = pm.response.json();
+
+          pm.expect(body).to.be.an('array');
+
+      });
+    language: text/javascript
+order: 1000

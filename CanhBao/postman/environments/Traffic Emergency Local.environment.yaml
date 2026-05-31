@@ -1,0 +1,52 @@
+name: Traffic Emergency Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:8082'
+  - key: phpmyadminUrl
+    value: 'http://localhost:8081'
+  - key: mysqlPort
+    value: '3307'
+  - key: firebaseApiKey
+    value: ''
+  - key: googleIdToken
+    value: ''
+  - key: firebaseIdToken
+    value: ''
+  - key: tokenAdmin
+    value: ''
+  - key: tokenUser
+    value: ''
+  - key: tokenTruSo
+    value: ''
+  - key: uid
+    value: ''
+  - key: user_id
+    value: ''
+  - key: report_id
+    value: ''
+  - key: sos_id
+    value: ''
+  - key: truso_id
+    value: ''
+  - key: goi_id
+    value: ''
+  - key: mua_goi_id
+    value: ''
+  - key: qua_id
+    value: ''
+  - key: hoa_don_id
+    value: ''
+  - key: camera_id
+    value: ''
+  - key: loai_su_co_id
+    value: ''
+  - key: stationName
+    value: Trụ sở test
+  - key: stationLogin
+    value: truso_test
+  - key: stationPassword
+    value: Admin123@
+  - key: kinhDoNominal
+    value: '106.7009'
+  - key: viDoNominal
+    value: '10.7769'

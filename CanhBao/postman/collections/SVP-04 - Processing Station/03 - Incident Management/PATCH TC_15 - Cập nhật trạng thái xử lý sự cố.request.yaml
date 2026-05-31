@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  Cập nhật trạng thái xử lý sự cố
+  - Expected: 200 if valid, 401 if no session
+  - NOT 500
+  - Requires: Valid {{report_id}}, login session
+url: http://{{baseUrl}}/su-co/cap-nhat-trang-thai/{{report_id}}
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"status": "DANG_XU_LY"}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200 or 404", function() {
+          const status = pm.response.code;
+          pm.expect([200, 404]).to.include(status);
+      });
+
+      pm.test("Response contains message or ketQua", function() {
+          const body = pm.response.json();
+          pm.expect(body.message || body.ketQua || body.data || body.error).to.exist;
+      });
+    language: text/javascript
+order: 4000

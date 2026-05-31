@@ -1,0 +1,3 @@
+$kind: collection
+description: Authentication and session management for Processing Station
+order: 1000

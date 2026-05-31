@@ -14,13 +14,24 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
+    private static final String ADMIN_LOGIN_URL = "/admin/login";
+    private static final String ADMIN_URL_PATTERN = "/admin/**";
+    private static final String API_GOI_URL_PATTERN = "/api/goi/**";
+    private static final String API_ADMIN_USER_URL_PATTERN = "/api/admin/quan-ly-user/**";
+    private static final String API_AUTH_ALL_USERS_URL = "/api/auth/all-users";
+    private static final String API_AUTH_URL_PATTERN = "/api/auth/**";
+    private static final String API_MAP_URL_PATTERN = "/api/map/**";
+    private static final String ADMIN_ROLE = "ADMIN";
+
     private final FirebaseFilter firebaseFilter;
     private final JwtFilter jwtFilter;
     private final CustomAuthEntryPoint customAuthEntryPoint;
 
-    public SecurityConfig(FirebaseFilter firebaseFilter,
-                          JwtFilter jwtFilter,
-                          CustomAuthEntryPoint customAuthEntryPoint) {
+    public SecurityConfig(
+            FirebaseFilter firebaseFilter,
+            JwtFilter jwtFilter,
+            CustomAuthEntryPoint customAuthEntryPoint
+    ) {
         this.firebaseFilter = firebaseFilter;
         this.jwtFilter = jwtFilter;
         this.customAuthEntryPoint = customAuthEntryPoint;
@@ -30,48 +41,28 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
-            .csrf(csrf -> csrf.disable())
-            // Sessio
-            .securityContext(context -> context
-        .requireExplicitSave(false)
-    )
-            .exceptionHandling(ex -> ex
-            .authenticationEntryPoint(customAuthEntryPoint)
-        )
-            .authorizeHttpRequests(auth -> auth
+                .csrf(csrf -> csrf.disable())
+                .securityContext(context -> context.requireExplicitSave(false))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthEntryPoint))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(ADMIN_LOGIN_URL).permitAll()
 
-                // PUBLIC
-                .requestMatchers("/admin/login").permitAll()
+                        .requestMatchers(API_GOI_URL_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(API_ADMIN_USER_URL_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(API_AUTH_ALL_USERS_URL).hasRole(ADMIN_ROLE)
+                        .requestMatchers(ADMIN_URL_PATTERN).hasRole(ADMIN_ROLE)
 
-                // ADMIN ONLY
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(API_AUTH_URL_PATTERN).permitAll()
+                        .requestMatchers(API_MAP_URL_PATTERN).authenticated()
 
-                .requestMatchers("/api/goi/**").permitAll()
-
-
-                .requestMatchers("/api/goi/**").hasRole("ADMIN")
-                .requestMatchers("/api/admin/quan-ly-user/**").hasRole("ADMIN")
-                .requestMatchers("/api/auth/all-users").hasRole("ADMIN")
-                
-                // USER + ADMIN đều vào được (có auth Firebase)
-
-                // AUTH SYNC USER
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/map/**").authenticated()
-
-                .anyRequest().permitAll()
-            )
-
-            // JWT ADMIN chạy trước
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-
-            // Firebase USER chạy sau
-            .addFilterBefore(firebaseFilter, UsernamePasswordAuthenticationFilter.class);
+                        .anyRequest().permitAll()
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(firebaseFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -66,11 +66,7 @@ public class AdminAuthController {
             ));
         }
 
-        User user = userRepository.findAll()
-            .stream()
-            .filter(u -> u.getEmail() != null && u.getEmail().equalsIgnoreCase(email))
-            .findFirst()
-            .orElse(null);
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
 
         if (user == null) {
             return unauthorized();

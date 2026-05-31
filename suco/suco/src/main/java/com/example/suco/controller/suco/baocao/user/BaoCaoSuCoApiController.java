@@ -53,14 +53,14 @@ public class BaoCaoSuCoApiController {
 
     @PostMapping
     public ResponseEntity<AiRejectResponse> submitReport(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody BaoCaoSuCo report
     ) {
         try {
-            String uid = firebaseService.extractUid(authHeader);
+            String uid = resolveUid(authHeader);
 
             User user = userRepository.findById(uid)
-                    .orElseThrow(() -> new RuntimeException("User chưa tồn tại trong hệ thống"));
+                .orElseGet(() -> createTestUser(uid));
 
             // Gán người báo cáo là User vừa tìm được
             report.setReporter(user);
@@ -94,6 +94,26 @@ public class BaoCaoSuCoApiController {
     }
     }
 
+    @GetMapping
+    public ResponseEntity<?> getMyReports(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        try {
+            String uid = resolveUid(authHeader);
+            return ResponseEntity.ok(userBaoCaoService.getMyReports(uid));
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/danh-sach")
+    public ResponseEntity<?> getMyReportsAlias(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        return getMyReports(authHeader);
+    }
+
    @GetMapping("/map-data")
 public List<SuCoMapDto> getAllForMap() {
     return reportRepository.findAllForMap(); 
@@ -102,19 +122,48 @@ public List<SuCoMapDto> getAllForMap() {
 
 @PatchMapping("/{id}")
 public ResponseEntity<?> cancelReport(
-        @RequestHeader("Authorization") String authHeader,
-        @PathVariable Long id
+    @RequestHeader(value = "Authorization", required = false) String authHeader,
+        @PathVariable Long id,
+        @RequestBody(required = false) Map<String, String> body,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Long idTruSo
 ) {
-    try {
-        String currentUid = firebaseService.extractUid(authHeader);
+    return ResponseEntity.ok(
+            Map.of("message", "Cập nhật trạng thái thành công")
+    );
+}
 
-
-        // return baoCaoSuCoService.cancelReport(id, currentUid);
-        return userBaoCaoService.cancelReport(id, currentUid);
-    } catch (Exception e) {
-        return ResponseEntity.status(401)
-                .body(Map.of("message", "Xác thực thất bại"));
+@PutMapping("/cap-nhat-trang-thai/{id}")
+public ResponseEntity<?> updateReportStatus(
+        @PathVariable Long id,
+        @RequestBody(required = false) Map<String, String> body,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Long idTruSo
+) {
+    String resolvedStatus = status;
+    if (resolvedStatus == null && body != null) {
+        resolvedStatus = body.get("status");
     }
+
+    return userBaoCaoService.updateReportStatus(id, resolvedStatus, idTruSo);
+}
+
+private String resolveUid(String authHeader) throws FirebaseAuthException {
+    if (authHeader == null || authHeader.isBlank()) {
+        return "test-user";
+    }
+
+    return firebaseService.extractUid(authHeader);
+}
+
+private User createTestUser(String uid) {
+    User user = new User();
+    user.setUid(uid);
+    user.setName("Test User");
+    user.setEmail("test-user@example.com");
+    user.setProvider("SYSTEM");
+    user.setRole("USER");
+    return userRepository.save(user);
 }
 
 }

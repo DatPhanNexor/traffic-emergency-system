@@ -1,0 +1,339 @@
+{
+  "info": {
+    "_postman_id": "7df341f2-2ea1-4eb0-81d9-5874d43d2610",
+    "name": "Traffic Emergency System API",
+    "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54988100",
+    "_collection_link": "https://go.postman.co/collection/54988100-7df341f2-2ea1-4eb0-81d9-5874d43d2610?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "SVP-02 - Module Quan Ly Su Co",
+      "item": [
+        {
+          "name": "Feature 1 - Quản lý báo cáo sự cố",
+          "item": [
+            {
+              "name": "API Tạo báo cáo sự cố - Func01",
+              "item": [
+                {
+                  "name": "POST ITC_20.1: Tạo thành công sự cố",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code là 201 Created\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(201);\r",
+                          "});\r",
+                          "pm.test(\"Thời gian phản hồi dưới 2000ms\", function () {\r",
+                          "    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    },
+                    {
+                      "listen": "prerequest",
+                      "script": {
+                        "exec": [
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "basic",
+                      "basic": [
+                        {
+                          "key": "password",
+                          "value": "6b408d51-025d-4cd2-ab2b-497544a34a4e",
+                          "type": "string"
+                        },
+                        {
+                          "key": "username",
+                          "value": "user",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"moTa\": \"Kẹt xe nghiêm trọng tại ngã tư\",\r\n    \"viDo\": 10.762622,\r\n    \"kinhDo\": 106.660172,\r\n    \"hinhAnhUrl\": \"https://example.com/image.jpg\",\r\n    \"loaiSuCoId\": 1,\r\n    \"loaiSuCo\": \"Tai nạn giao thông\"\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/incidents",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "incidents"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "POST ITC_20.2: Thất bại khi thiếu tọa độ bản đồ",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code lỗi client (400 Bad Request)\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(400);\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/su-co",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "su-co"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "POST ITC_20.3: Thất bại khi sai định dạng dữ liệu",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code lỗi client (400 Bad Request)\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(400);\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/su-co",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "su-co"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Feature 2 - Xem danh sách sự cố",
+          "item": [
+            {
+              "name": "API Lấy danh sách - Func02",
+              "item": [
+                {
+                  "name": "GET ITC_21.1: Lấy danh sách thành công",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code là 200 OK\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(200);\r",
+                          "});\r",
+                          "pm.test(\"Dữ liệu trả về đúng định dạng JSON\", function () {\r",
+                          "    pm.response.to.be.json;\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/su-co/map-data",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "su-co",
+                        "map-data"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Feature 3 - Cập nhật trạng thái sự cố",
+          "item": [
+            {
+              "name": "API Cập nhật trạng thái - Func03",
+              "item": [
+                {
+                  "name": "PUT ITC_22.1: Cập nhật thành công trạng thái (Ví dụ: Đang xử lý)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code là 200 OK\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(200);\r",
+                          "});\r",
+                          "pm.test(\"Dữ liệu trả về đúng định dạng JSON\", function () {\r",
+                          "    pm.response.to.be.json;\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PATCH",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/su-co/1",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "su-co",
+                        "1"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "PUT ITC_22.2: Thất bại khi truyền sai ID sự cố",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code lỗi client (400 Bad Request)\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(400);\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PUT",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/incidents/999999",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "incidents",
+                        "999999"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Feature 4 - Bản đồ sự cố",
+          "item": [
+            {
+              "name": "API Kiểm tra dữ liệu bản đồ - Func04",
+              "item": [
+                {
+                  "name": "GET ITC_23.1: Lấy tọa độ bản đồ thành công",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code là 200 OK\", function () {\r",
+                          "    pm.expect(pm.response.code).to.equal(200);\r",
+                          "});\r",
+                          "pm.test(\"Dữ liệu trả về đúng định dạng JSON\", function () {\r",
+                          "    pm.response.to.be.json;\r",
+                          "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/incidents/maps",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "incidents",
+                        "maps"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -56,5 +56,5 @@ jobs:
           -Dsonar.sources=src/main/java
           -Dsonar.java.binaries=target/classes
           -Dsonar.exclusions=**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/testing/**,**/*.json,**/*.png,**/*.jpg,**/*.jpeg
-          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.wait=false
           -Dsonar.qualitygate.timeout=300

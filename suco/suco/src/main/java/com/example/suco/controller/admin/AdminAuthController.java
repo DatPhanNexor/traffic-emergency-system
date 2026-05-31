@@ -26,6 +26,10 @@ public class AdminAuthController {
     private static final String MESSAGE_KEY = "message";
     private static final String ADMIN_ROLE = "ADMIN";
     private static final String ADMIN_JWT_COOKIE = "ADMIN_JWT";
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String TOKEN_KEY = "token";
+    private static final String UID_KEY = "uid";
+    private static final String ROLE_KEY = "role";
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
@@ -100,10 +104,10 @@ public class AdminAuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(Map.of(
-                        MESSAGE_KEY, "Đăng nhập admin thành công",
-                        "token", token,
-                        "uid", user.getUid(),
-                        "role", ADMIN_ROLE
+                    MESSAGE_KEY, "Đăng nhập admin thành công",
+                    TOKEN_KEY, token,
+                    UID_KEY, user.getUid(),
+                    ROLE_KEY, ADMIN_ROLE
                 ));
     }
 
@@ -115,7 +119,7 @@ public class AdminAuthController {
     private Map<String, String> readLoginRequest(HttpServletRequest request) throws IOException {
         String contentType = request.getContentType();
 
-        if (contentType != null && contentType.toLowerCase().contains("application/json")) {
+        if (contentType != null && contentType.toLowerCase().contains(JSON_CONTENT_TYPE)) {
             try {
                 Map<String, String> body = objectMapper.readValue(
                         request.getInputStream(),

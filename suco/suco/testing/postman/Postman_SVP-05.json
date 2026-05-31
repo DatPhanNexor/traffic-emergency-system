@@ -1,0 +1,228 @@
+{
+  "info": {
+    "_postman_id": "svp05-gifts-points-rewards-full",
+    "name": "SVP-05 — Quà, Điểm, Đổi Thưởng (Complete)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Auth & Setup",
+      "item": [
+        {
+          "name": "POST Admin Login -> auto-save tokenAdmin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST User Sync (dev-token) -> auto-save tokenUser",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Quà — Danh sách (User)",
+      "item": [
+        {
+          "name": "GET Lấy danh sách tất cả quà",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Quà — Quản lý (Admin)",
+      "item": [
+        {
+          "name": "GET Lấy danh sách quà (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Thêm quà mới",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "PATCH Sửa thông tin quà",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "DELETE Xóa quà (Happy)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Đổi Quà (User)",
+      "item": [
+        {
+          "name": "POST Đổi điểm lấy quà (Happy)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Đổi quà — Không đủ điểm (Negative)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Đổi quà — Không Auth (Negative)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "GET Xem túi quà của tôi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Đổi Tiền & Quyên Góp (User)",
+      "item": [
+        {
+          "name": "POST Quyên góp",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Đổi tiền",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Đổi tiền — Không đủ điểm (Negative)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Lịch Sử Đổi Điểm",
+      "item": [
+        {
+          "name": "GET Lịch sử cá nhân",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "GET Lịch sử filter QUYEN_GOP",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "GET Lịch sử tất cả (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "GET Thống kê quỹ quyên góp",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "GET Lịch sử tổng hợp",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Negative Tests - Edge Cases",
+      "item": [
+        {
+          "name": "DELETE Xóa quà không tồn tại (Negative)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Exchange - Gift Not Found",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST Exchange - Invalid Gift ID",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        },
+        {
+          "name": "POST DoiTien - Invalid Points (Negative)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "" }
+          }
+        }
+      ]
+    }
+  ]
+}

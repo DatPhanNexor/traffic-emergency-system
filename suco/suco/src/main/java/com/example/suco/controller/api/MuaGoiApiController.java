@@ -38,42 +38,13 @@ public class MuaGoiApiController {
         return decodedToken.getUid();
     }
 
-        // 🔹 Danh sách
+    // 🔹 Danh sách
     @GetMapping("/danh-sach")
     public ResponseEntity<?> getDanhSachGoi() {
         return ResponseEntity.ok(goiService.getAllGoi());
     }
 
-    /*@PostMapping("/dang-ky")
-    public ResponseEntity<?> dangKyMuaGoi(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestBody Map<String, Object> request
-    ) {
-        try {
-            // Bước 1: Xác thực Token (Nếu sai sẽ nhảy xuống catch Exception cuối cùng)
-            String uid = getUidFromHeader(authHeader);
-
-            Long goiId = Long.valueOf(request.get("goiId").toString());
-            
-            // Bước 2: Gọi Service xử lý nghiệp vụ
-            muaGoiService.dangKyGoi(uid, goiId);
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "message", "Đăng ký gói thành công"
-            ));
-
-        } catch (RuntimeException e) {
-            // LỖI NGHIỆP VỤ (Ví dụ: Đã có gói): Trả về 400 Bad Request
-            return ResponseEntity.status(400)
-                    .body(Map.of("message", "Lỗi nghiệp vụ: " + e.getMessage()));
-                    
-        } catch (Exception e) {
-            // LỖI XÁC THỰC: Trả về 401 Unauthorized
-            return ResponseEntity.status(401)
-                    .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
-        }
-    }*/
+    // ĐĂNG KÝ GÓI (Phiên bản đã fix mã lỗi 404/400 cho SVP-03)
     @PostMapping("/dang-ky")
     public ResponseEntity<?> dangKyMuaGoi(
             @RequestHeader("Authorization") String authHeader,
@@ -91,7 +62,7 @@ public class MuaGoiApiController {
             ));
 
         } catch (RuntimeException e) {
-            // Kiểm tra nếu tin nhắn là "Không tìm thấy gói" thì trả về 404, ngược lại trả về 400
+            // Phân loại lỗi nghiệp vụ: 404 cho gói không tồn tại, 400 cho lỗi khác
             if (e.getMessage().contains("Không tìm thấy gói")) {
                 return ResponseEntity.status(404)
                         .body(Map.of("message", e.getMessage()));
@@ -112,12 +83,9 @@ public class MuaGoiApiController {
     ) {
         try {
             String uid = getUidFromHeader(authHeader);
-
             return ResponseEntity.ok(muaGoiService.getGoiByUserId(uid));
-
         } catch (Exception e) {
-            return ResponseEntity.status(401)
-                    .body("Xác thực thất bại");
+            return ResponseEntity.status(401).body("Xác thực thất bại");
         }
     }
 
@@ -129,20 +97,12 @@ public class MuaGoiApiController {
     ) {
         try {
             String uid = getUidFromHeader(authHeader);
-
             muaGoiService.huyGoi(id, uid);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "Đã hủy gói thành công"
-            ));
-
+            return ResponseEntity.ok(Map.of("message", "Đã hủy gói thành công"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage()));
-
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(401)
-                    .body("Xác thực thất bại");
+            return ResponseEntity.status(401).body("Xác thực thất bại");
         }
     }
 }

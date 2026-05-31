@@ -441,5 +441,64 @@ public class UserBaoCaoService {
         );
     }
 
+    @Transactional
+    public ResponseEntity<?> updateReportStatus(
+            Long reportId,
+            String status,
+            Long idTruSo
+    ) {
+
+        if (status == null || status.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Status không được để trống"));
+        }
+
+        List<String> valid = List.of(
+                "CHO_XU_LY",
+                "DANG_XU_LY",
+                "HOAN_THANH",
+                "HUY_BO"
+        );
+
+        if (!valid.contains(status)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Trạng thái không hợp lệ"));
+        }
+
+        BaoCaoSuCo report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy báo cáo"
+                ));
+
+        if ("DANG_XU_LY".equals(status) && idTruSo != null) {
+            report.setIdTruSoTiepNhan(idTruSo);
+        }
+
+        report.setTrangThaiXuLy(status);
+
+        BaoCaoSuCo saved = reportRepository.save(report);
+        SuCoMapDto dto = suCoMapper.convertToDto(saved);
+
+        realtimeService.broadcastReport(dto);
+
+        if (saved.getIdTruSoTiepNhan() != null) {
+            realtimeService.broadcastTruSo(saved.getIdTruSoTiepNhan(), dto);
+        }
+
+        if (saved.getReporter() != null) {
+            realtimeService.refreshUserHistory(saved.getReporter().getUid());
+        }
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "Cập nhật trạng thái thành công",
+                        "status",
+                        status
+                )
+        );
+    }
+
    
 }

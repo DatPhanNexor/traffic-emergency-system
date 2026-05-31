@@ -1,14 +1,20 @@
 package com.example.suco.controller.api;
 
-import com.example.suco.dto.GoiDto;
-import com.example.suco.service.GoiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.example.suco.model.Goi;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import com.example.suco.dto.GoiDto;
+import com.example.suco.model.Goi;
+import com.example.suco.service.GoiService;
 
 @RestController
 @RequestMapping("/api/goi")
@@ -44,4 +50,4 @@ public ResponseEntity<?> updateGoi(@PathVariable Long id,
     goiService.updateGoi(id, dto);
     return ResponseEntity.ok("Cập nhật thành công");
 }
-}
+}//

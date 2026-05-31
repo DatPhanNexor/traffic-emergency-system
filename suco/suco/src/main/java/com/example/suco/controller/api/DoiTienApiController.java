@@ -13,6 +13,7 @@ import com.google.firebase.auth.FirebaseToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,11 +44,16 @@ public ResponseEntity<?> thucHienDoi(
 ) {
     try {
         String uid = getUidFromHeader(authHeader);
-
         doiTienService.thucHienDoiTien(uid, dto);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Đổi tiền thành công!"
+        ));
+
+    } catch (ResponseStatusException e) {
+        // ResponseStatusException chứa HttpStatus và reason (message)
+        return ResponseEntity.status(e.getStatusCode()).body(Map.of(
+                "message", e.getReason() != null ? e.getReason() : "Lỗi xác thực"
         ));
 
     } catch (RuntimeException e) {

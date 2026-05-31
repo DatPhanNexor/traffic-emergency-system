@@ -6,7 +6,6 @@ import com.example.suco.security.JwtService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -22,28 +21,39 @@ import java.util.Map;
 @RequestMapping("/admin")
 public class AdminAuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private static final String EMAIL_KEY = "email";
+    private static final String PASSWORD_KEY = "password";
+    private static final String MESSAGE_KEY = "message";
+    private static final String ADMIN_ROLE = "ADMIN";
+    private static final String ADMIN_JWT_COOKIE = "ADMIN_JWT";
 
-    @Autowired
-    private JwtService jwtService;
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    public AdminAuthController(
+            UserRepository userRepository,
+            JwtService jwtService,
+            PasswordEncoder passwordEncoder
+    ) {
+        this.userRepository = userRepository;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+        this.objectMapper = new ObjectMapper();
+    }
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> login(HttpServletRequest request) throws IOException {
+    public ResponseEntity<Map<String, Object>> login(HttpServletRequest request) throws IOException {
         Map<String, String> req = readLoginRequest(request);
 
-        String email = normalize(req.get("email"));
-        String password = req.get("password");
+        String email = normalize(req.get(EMAIL_KEY));
+        String password = req.get(PASSWORD_KEY);
 
         if (isBlank(email) || isBlank(password)) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Email và mật khẩu không được để trống"
+                    MESSAGE_KEY, "Email và mật khẩu không được để trống"
             ));
         }
 
@@ -72,15 +82,15 @@ public class AdminAuthController {
 
         String role = normalize(user.getRole()).toUpperCase();
 
-        if (!"ADMIN".equals(role)) {
+        if (!ADMIN_ROLE.equals(role)) {
             return ResponseEntity.status(403).body(Map.of(
-                    "message", "Tài khoản không có quyền admin"
+                    MESSAGE_KEY, "Tài khoản không có quyền admin"
             ));
         }
 
-        String token = jwtService.generateToken(user.getUid(), "ADMIN");
+        String token = jwtService.generateToken(user.getUid(), ADMIN_ROLE);
 
-        ResponseCookie cookie = ResponseCookie.from("ADMIN_JWT", token)
+        ResponseCookie cookie = ResponseCookie.from(ADMIN_JWT_COOKIE, token)
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
@@ -90,10 +100,10 @@ public class AdminAuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(Map.of(
-                        "message", "Đăng nhập admin thành công",
+                        MESSAGE_KEY, "Đăng nhập admin thành công",
                         "token", token,
                         "uid", user.getUid(),
-                        "role", "ADMIN"
+                        "role", ADMIN_ROLE
                 ));
     }
 
@@ -109,7 +119,7 @@ public class AdminAuthController {
             try {
                 Map<String, String> body = objectMapper.readValue(
                         request.getInputStream(),
-                        new TypeReference<Map<String, String>>() {}
+                        new TypeReference<>() {}
                 );
                 return body != null ? body : new HashMap<>();
             } catch (Exception ex) {
@@ -118,8 +128,8 @@ public class AdminAuthController {
         }
 
         Map<String, String> form = new HashMap<>();
-        form.put("email", request.getParameter("email"));
-        form.put("password", request.getParameter("password"));
+        form.put(EMAIL_KEY, request.getParameter(EMAIL_KEY));
+        form.put(PASSWORD_KEY, request.getParameter(PASSWORD_KEY));
         return form;
     }
 
@@ -131,9 +141,9 @@ public class AdminAuthController {
         return value == null || value.trim().isEmpty();
     }
 
-    private ResponseEntity<?> unauthorized() {
+    private ResponseEntity<Map<String, Object>> unauthorized() {
         return ResponseEntity.status(401).body(Map.of(
-                "message", "Sai tài khoản hoặc mật khẩu"
+                MESSAGE_KEY, "Sai tài khoản hoặc mật khẩu"
         ));
     }
 }

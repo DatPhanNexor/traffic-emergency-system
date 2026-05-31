@@ -1,0 +1,60 @@
+name: Main PR Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-build-sonar:
+    name: Build and SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    defaults:
+      run:
+        working-directory: suco/suco
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: suco/suco/pom.xml
+
+      - name: Check Maven project structure
+        run: |
+          echo "Checking Spring Boot Maven project..."
+          test -f pom.xml
+          test -d src/main/java
+          test -d src/main/resources
+
+      - name: Build Maven project
+        run: mvn -B clean package -DskipTests
+
+      - name: Run SonarQube Quality Gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          mvn -B sonar:sonar
+          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.sources=src/main/java
+          -Dsonar.java.binaries=target/classes
+          -Dsonar.exclusions=**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/testing/**,**/*.json,**/*.png,**/*.jpg,**/*.jpeg
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=300

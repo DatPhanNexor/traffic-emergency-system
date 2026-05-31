@@ -15,8 +15,8 @@ import com.example.suco.security.JwtFilter;
 @Configuration
 public class SecurityConfig {
 
-    private static final String ADMIN_LOGIN_URL = "/admin/login";
     private static final String ADMIN_URL_PATTERN = "/admin/**";
+    private static final String ADMIN_LOGIN_URL = "/admin/login";
     private static final String API_GOI_URL_PATTERN = "/api/goi/**";
     private static final String API_ADMIN_USER_URL_PATTERN = "/api/admin/quan-ly-user/**";
     private static final String API_AUTH_ALL_USERS_URL = "/api/auth/all-users";
@@ -47,44 +47,36 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            // Sessio
             .securityContext(context -> context
-        .requireExplicitSave(false)
-    )
+                .requireExplicitSave(false)
+            )
             .exceptionHandling(ex -> ex
-            .authenticationEntryPoint(customAuthEntryPoint)
-        )
+                .authenticationEntryPoint(customAuthEntryPoint)
+            )
             .authorizeHttpRequests(auth -> auth
+                // 1. PUBLIC: Các đường dẫn ai cũng vào được
+                .requestMatchers(ADMIN_LOGIN_URL).permitAll() 
+                .requestMatchers(API_AUTH_URL_PATTERN).permitAll()
 
-                // PUBLIC
-                .requestMatchers("/admin/login").permitAll()
+                // 2. ADMIN ONLY: Sử dụng Hằng số (Constants) để fix lỗi Sonar
+                .requestMatchers(ADMIN_URL_PATTERN).hasRole(ADMIN_ROLE)
+                .requestMatchers(API_GOI_URL_PATTERN).hasRole(ADMIN_ROLE)
+                .requestMatchers(API_ADMIN_USER_URL_PATTERN).hasRole(ADMIN_ROLE)
+                .requestMatchers(API_AUTH_ALL_USERS_URL).hasRole(ADMIN_ROLE)
 
-                // ADMIN ONLY
-                .requestMatchers("/admin/**").hasRole("ADMIN")// Chỉ Admin mới được vào
-                .requestMatchers("/api/goi/**").hasRole("ADMIN")
+                // 3. USER + ADMIN: Yêu cầu đăng nhập nói chung
+                .requestMatchers(API_MAP_URL_PATTERN).authenticated()
 
-                // USER + ADMIN đều vào được (có auth Firebase)
-
-                // AUTH SYNC USER
-                .requestMatchers("/api/auth/**").permitAll()
-                //.requestMatchers("/api/map/**").authenticated()
-                .requestMatchers("/api/goi/**").hasAuthority("ADMIN")
-
-                        .requestMatchers(API_GOI_URL_PATTERN).hasRole(ADMIN_ROLE)
-                        .requestMatchers(API_ADMIN_USER_URL_PATTERN).hasRole(ADMIN_ROLE)
-                        .requestMatchers(API_AUTH_ALL_USERS_URL).hasRole(ADMIN_ROLE)
-                        .requestMatchers(ADMIN_URL_PATTERN).hasRole(ADMIN_ROLE)
-
-                        .requestMatchers(API_AUTH_URL_PATTERN).permitAll()
-                        .requestMatchers(API_MAP_URL_PATTERN).authenticated()
-
-                        .anyRequest().permitAll()
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(firebaseFilter, UsernamePasswordAuthenticationFilter.class);
+                // 4. Các yêu cầu khác
+                .anyRequest().permitAll()
+            )
+            // JWT ADMIN chạy trước để kiểm tra token trong Header/Cookie
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            // Firebase USER chạy sau
+            .addFilterBefore(firebaseFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 }
 // Đã hoàn thành kiểm thử Sprint 1 cho SVP-6
-// Jira Link Test
+// Jira Link Test: SVP-6, SVP-55, SVP-56

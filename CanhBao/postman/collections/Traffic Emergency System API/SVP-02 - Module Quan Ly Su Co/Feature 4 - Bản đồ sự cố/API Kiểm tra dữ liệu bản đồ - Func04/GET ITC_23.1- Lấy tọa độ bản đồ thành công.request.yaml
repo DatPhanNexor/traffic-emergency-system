@@ -1,0 +1,19 @@
+$kind: http-request
+name: "GET ITC_23.1: Lấy tọa độ bản đồ thành công"
+url: "{{baseUrl}}/api/incidents/maps"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code là 200 OK\", function () {\r
+
+      \    pm.expect(pm.response.code).to.equal(200);\r
+
+      });\r
+
+      pm.test(\"Dữ liệu trả về đúng định dạng JSON\", function () {\r
+
+      \    pm.response.to.be.json;\r
+
+      });"
+    language: text/javascript
+order: 1000

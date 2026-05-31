@@ -1,0 +1,71 @@
+$kind: http-request
+name: POST TC_01 - Đăng nhập trụ sở thành công
+description: |-
+  Đăng nhập tài khoản trụ sở
+  - Expected: Status 200, Message 'Login success', JSESSIONID cookie saved
+  - Source: TruSoLoginController.login()
+url: http://{{baseUrl}}/truso/login
+method: POST
+headers:
+  Content-Type: application/x-www-form-urlencoded
+body:
+  type: urlencoded
+  content:
+    username: nguyenteo
+    password: 123456@Tai
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("Status is 200", function() {
+
+          pm.response.to.have.status(200);
+
+      });
+
+
+
+      pm.test("Response has message 'Login success'", function() {
+
+          const body = pm.response.json();
+
+          pm.expect(body.message || body.data.message).to.include("Login success");
+
+      });
+
+
+
+      pm.test("Response contains id", function() {
+
+          const body = pm.response.json();
+
+              pm.expect(body.id || (body.data && body.data.id)).to.exist;
+
+      });
+
+
+
+      pm.test("JSESSIONID cookie is present", function() {
+
+          pm.expect(pm.cookies.has('JSESSIONID')).to.be.true;
+
+      });
+
+
+
+      try {
+
+          const data = pm.response.json().data;
+
+          if (data.id) {
+
+              pm.environment.set('truso_id', data.id);
+
+          }
+
+      } catch(e) {
+
+          console.log('Could not extract data from response');
+
+      }
+    language: text/javascript
+order: 1000

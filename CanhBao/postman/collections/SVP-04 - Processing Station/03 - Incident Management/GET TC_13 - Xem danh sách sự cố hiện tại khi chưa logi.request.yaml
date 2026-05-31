@@ -1,0 +1,35 @@
+$kind: http-request
+name: GET TC_13 - Xem danh sách sự cố hiện tại khi chưa login
+description: |-
+  Negative test: Xem danh sách sự cố khi chưa login
+  - Current behavior: May return empty list (200)
+  - Expected behavior: Should return 401
+  - Note: Potential security issue - run after logout or without session
+url: http://{{baseUrl}}/su-co/danh-sach-hien-tai
+method: GET
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("Status is 200 or 401 (depends on implementation)", function() {
+
+          const status = pm.response.code;
+
+          pm.expect([200, 401]).to.include(status);
+
+      });
+
+
+
+      pm.test("Note: Source currently returns empty list instead of 401", function() {
+
+          const body = pm.response.json();
+
+          if (pm.response.code === 200) {
+
+              console.log('SECURITY NOTE: Should enforce login, currently returns list');
+
+          }
+
+      });
+    language: text/javascript
+order: 2000

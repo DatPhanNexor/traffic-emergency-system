@@ -53,19 +53,5 @@ services:
       mysql:
         condition: service_healthy
 
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins_canhbao
-    restart: always
-    ports:
-      - "8085:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      JAVA_OPTS: "-Xmx512m -Xms512m"
-
 volumes:
   mysql_data:
-  jenkins_data:

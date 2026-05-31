@@ -22,7 +22,7 @@ body:
 auth:
   type: basic
   credentials:
-    password: 6b408d51-025d-4cd2-ab2b-497544a34a4e
+    password: mật khẩu của bạn
     username: user
 scripts:
   - type: afterResponse

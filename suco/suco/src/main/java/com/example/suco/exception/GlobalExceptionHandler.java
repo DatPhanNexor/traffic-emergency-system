@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import com.example.suco.dto.AiRejectResponse;
 
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -88,6 +89,16 @@ public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgu
                     "confidence", 0
             ));
 }
+
+@ExceptionHandler(HttpMessageNotReadableException.class)
+public ResponseEntity<?> handleInvalidJson(HttpMessageNotReadableException ex) {
+    return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(Map.of(
+                    "message", "Định dạng dữ liệu không hợp lệ"
+            ));
+}
+
 @ExceptionHandler(RuntimeException.class)
 public ResponseEntity<Map<String, String>> handleRuntime(RuntimeException ex) {
     return ResponseEntity

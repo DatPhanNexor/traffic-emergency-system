@@ -49,7 +49,14 @@ public class TinHieuSOSService {
         sos.setUserId(uid);
         sos.setViDo(dto.getViDo());
         sos.setKinhDo(dto.getKinhDo());
-        sos.setGhiChu(dto.getGhiChu());
+        
+        String ghiChu = dto.getGhiChu();
+        
+        if (ghiChu == null || ghiChu.isBlank()) {
+            ghiChu = dto.getMoTa();
+        }
+
+        sos.setGhiChu(ghiChu);
 
         // 1. Xử lý Geocoding an toàn (Tránh ConnectException)
        if (dto.getDiaChi() != null && !dto.getDiaChi().isEmpty()) {

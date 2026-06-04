@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -23,17 +25,25 @@ public class DoiTienService {
     private final long HE_SO = 100L; // 10 điểm * 100 = 1000 VNĐ
 
     @Transactional
-public boolean thucHienDoiTien(String uid, DoiTienDto dto) {
-    if (dto.getSoDiemDoi() <= 0) return false;
+    public boolean thucHienDoiTien(String uid, DoiTienDto dto) {
+        if (dto.getSoDiemDoi() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số điểm phải lớn hơn 0");
+        }
 
-    // ✅ dùng uid từ token
-    User user = userRepository.findById(uid).orElse(null);
+        // Tốt hơn: dùng orElseThrow
+        User user = userRepository.findById(uid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Người dùng không tồn tại"));
 
-    if (user == null || user.getTotalPoints() < dto.getSoDiemDoi()) return false;
+        // Kiểm tra số dư điểm
+        if (user.getTotalPoints() < dto.getSoDiemDoi()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Không đủ điểm để thực hiện giao dịch. Số dư: " + user.getTotalPoints() 
+                + ", yêu cầu: " + dto.getSoDiemDoi());
+        }
 
-    // 1. Trừ điểm
-    user.setTotalPoints(user.getTotalPoints() - dto.getSoDiemDoi());
-    userRepository.save(user);
+        // 1. Trừ điểm
+        user.setTotalPoints(user.getTotalPoints() - dto.getSoDiemDoi());
+        userRepository.save(user);
 
     long giaTriGiaoDich = dto.getSoDiemDoi() * HE_SO;
 

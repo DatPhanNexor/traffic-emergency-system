@@ -14,10 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import com.example.suco.repository.BaoCaoSuCoRepository;
+
 import com.example.suco.dto.CameraMapDto;
 import com.example.suco.model.BaoCaoSuCo;
 import com.example.suco.model.Camera;
+import com.example.suco.repository.BaoCaoSuCoRepository;
 import com.example.suco.repository.CameraRepository;
 import com.example.suco.service.CameraService;
 
@@ -45,7 +46,7 @@ public class AdminCameraController {
     }
 
     @PostMapping(value = "/them", consumes = "multipart/form-data")
-@ResponseBody 
+    @ResponseBody 
     public ResponseEntity<Camera> themCamera(
             @RequestParam("tenCamera") String tenCamera,
             @RequestParam(value = "moTa", required = false) String moTa,

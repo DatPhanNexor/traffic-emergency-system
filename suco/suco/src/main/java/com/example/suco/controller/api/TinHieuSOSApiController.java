@@ -51,19 +51,22 @@ public ResponseEntity<?> tiepNhanTinHieu(
     @RequestHeader("Authorization") String authHeader,
     @RequestBody TinHieuSOSRequestDTO dto
 ) {
+    String uid;
+
     try {
         String token = authHeader.replace("Bearer ", "");
-        String uid;
-        // --- CƠ CHẾ BYPASS CHO DEV ---
+
         if ("dev-token".equals(token)) {
-            uid = "test-user"; // ID này phải tồn tại trong bảng users của bạn để không lỗi Foreign Key
+            uid = "test-user";
         } else {
-            // Luồng thật cho App
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
             uid = decodedToken.getUid();
         }
-        // -----------------------------
+    } catch (Exception e) {
+        return ResponseEntity.status(401).body("Xác thực thất bại: " + e.getMessage());
+    }
 
+    try {
         Map<String, Object> ketQua = tinHieuSOSService.xuLyTinHieuSOS(uid, dto);
 
         TinHieuSOS sosDaLuu = (TinHieuSOS) ketQua.get("sosData");
@@ -73,10 +76,13 @@ public ResponseEntity<?> tiepNhanTinHieu(
 
         return ResponseEntity.ok(sosDaLuu);
 
-    } catch (Exception e) {
-        return ResponseEntity.status(401).body("Xác thực thất bại: " + e.getMessage());
+    } catch (RuntimeException e) {
+        return ResponseEntity.badRequest().body(Map.of(
+            "message", e.getMessage()
+        ));
     }
 }
+
     @GetMapping("/active")
 public ResponseEntity<?> getSosActive(
     @RequestParam(required = false) String status, // Thêm dòng này để nhận filter từ Postman

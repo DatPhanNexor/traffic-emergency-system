@@ -45,13 +45,21 @@ public class TinHieuSOSService {
 
     @Transactional
     public Map<String, Object> xuLyTinHieuSOS(String uid, TinHieuSOSRequestDTO dto) {
+        List<String> trangThaiDangXuLy = List.of("CHO_XU_LY", "DANG_XU_LY");
+
+        boolean daCoSosActive = tinHieuSOSRepository.existsByUserIdAndTrangThaiIn(uid, trangThaiDangXuLy);
+
+        if (daCoSosActive) {
+            throw new RuntimeException("User đang có yêu cầu SOS chưa hoàn tất");
+        }
+
         TinHieuSOS sos = new TinHieuSOS();
         sos.setUserId(uid);
         sos.setViDo(dto.getViDo());
         sos.setKinhDo(dto.getKinhDo());
-        
+
         String ghiChu = dto.getGhiChu();
-        
+
         if (ghiChu == null || ghiChu.isBlank()) {
             ghiChu = dto.getMoTa();
         }

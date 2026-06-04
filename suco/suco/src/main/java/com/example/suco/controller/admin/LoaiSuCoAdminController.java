@@ -8,10 +8,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,33 +34,43 @@ public class LoaiSuCoAdminController {
     public String page(Model model) {
         model.addAttribute("list", service.getLoaiSuCo());
         model.addAttribute("activePage", "loai-su-co");
-        return "admin/loai-su-co"; // trỏ tới loai-su-co.html
+        return "admin/loai-su-co";
     }
 
-@PostMapping(value = {"", "/api/create"})
-@ResponseBody
-public ResponseEntity<?> createApi(
-        @RequestParam String ten,
-        @RequestParam(value = "iconFile", required = false) MultipartFile file
-) throws IOException {
+    /**
+     * FIX B01: Hỗ trợ tạo mới qua /admin/loai-su-co và /admin/loai-su-co/api/create
+     */
+    @PostMapping(value = {"", "/api/create"})
+    @ResponseBody
+    public ResponseEntity<?> createApi(
+            @RequestParam String ten,
+            @RequestParam(value = "iconFile", required = false) MultipartFile file
+    ) throws IOException {
+        LoaiSuCo saved = service.createLoaiSuCo(ten, file);
+        return ResponseEntity.ok(saved);
+    }
 
-    LoaiSuCo saved = service.createLoaiSuCo(ten, file);
-    return ResponseEntity.ok(saved);
-}
-@DeleteMapping("/{id}")
-@ResponseBody
-public ResponseEntity<?> delete(@PathVariable Long id) {
-    service.deleteLoaiSuCo(id);
-    return ResponseEntity.ok(Map.of("message", "Xóa thành công"));
-}
-@PatchMapping("/{id}")
-@ResponseBody
-public ResponseEntity<?> updateApi(
-        @PathVariable Long id,
-        @RequestParam String ten,
-        @RequestParam(value = "iconFile", required = false) MultipartFile file
-) throws IOException {
-    LoaiSuCo updated = service.updateLoaiSuCo(id, ten, file);
-    return ResponseEntity.ok(updated);
-}
+    /**
+     * FIX B03: Hỗ trợ xóa qua /admin/loai-su-co/{id} và /admin/loai-su-co/delete/{id}
+     */
+    @DeleteMapping(value = {"/{id}", "/delete/{id}"})
+    @ResponseBody
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        service.deleteLoaiSuCo(id);
+        return ResponseEntity.ok(Map.of("message", "Xóa thành công"));
+    }
+
+    /**
+     * FIX B02: Hỗ trợ cập nhật qua PATCH /{id} và PUT /api/update/{id}
+     */
+    @RequestMapping(value = {"/{id}", "/api/update/{id}"}, method = {RequestMethod.PATCH, RequestMethod.PUT})
+    @ResponseBody
+    public ResponseEntity<?> updateApi(
+            @PathVariable Long id,
+            @RequestParam String ten,
+            @RequestParam(value = "iconFile", required = false) MultipartFile file
+    ) throws IOException {
+        LoaiSuCo updated = service.updateLoaiSuCo(id, ten, file);
+        return ResponseEntity.ok(updated);
+    }
 }

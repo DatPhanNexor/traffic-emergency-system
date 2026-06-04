@@ -1,19 +1,12 @@
 package com.example.suco.controller.admin;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.suco.dto.CameraMapDto;
@@ -44,6 +37,9 @@ public class AdminCameraController {
         return "admin/quan-ly-camera";
     }
 
+    /**
+     * FIX TOÀN BỘ ITC_11.1 ĐẾN ITC_11.6
+     */
     @PostMapping(value = "/them", consumes = "multipart/form-data")
     @ResponseBody 
     public ResponseEntity<?> themCamera(
@@ -54,48 +50,55 @@ public class AdminCameraController {
             @RequestParam(value = "anhCamera", required = false) MultipartFile anhCamera,
             @RequestParam(value = "videoFile", required = false) MultipartFile videoFile) {
         try {
-
+            // 1. Kiểm tra trống tên camera (TC_09)
             if (tenCamera == null || tenCamera.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tên camera không được để trống!");
             }
 
-
+            // 2. Kiểm tra độ dài tên camera (ITC_11.2)
             if (tenCamera.length() > 255) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tên camera không được vượt quá 255 ký tự!");
             }
 
+            // 3. Kiểm tra độ dài mô tả (ITC_11.4)
+            if (moTa != null && moTa.length() > 255) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mô tả không được vượt quá 255 ký tự!");
+            }
+
+            // 4. Kiểm tra trống Kinh độ/Vĩ độ (ITC_11.6)
+            if (kinhDoStr == null || kinhDoStr.trim().isEmpty() || viDoStr == null || viDoStr.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Kinh độ và vĩ độ không được để trống!");
+            }
+
+            // 5. Kiểm tra độ dài Kinh độ/Vĩ độ (ITC_11.5)
+            if (kinhDoStr.length() > 255 || viDoStr.length() > 255) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Độ dài tọa độ quá giới hạn cho phép!");
+            }
+
+            // 6. Kiểm tra định dạng số của tọa độ
+            Double kinhDo;
+            Double viDo;
+            try {
+                kinhDo = Double.parseDouble(kinhDoStr.trim());
+                viDo = Double.parseDouble(viDoStr.trim());
+            } catch (NumberFormatException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tọa độ phải là định dạng số hợp lệ!");
+            }
+
+            // Tạo đối tượng Camera nếu tất cả validate thành công
             Camera camera = new Camera();
             camera.setTenCamera(tenCamera.trim());
             camera.setMoTa(moTa != null && !moTa.trim().isEmpty() ? moTa.trim() : null);
-            
-
-            Double kinhDo = 0.0;
-            Double viDo = 0.0;
-            try {
-                if (kinhDoStr != null && !kinhDoStr.trim().isEmpty()) {
-                    kinhDo = Double.parseDouble(kinhDoStr);
-                }
-            } catch (NumberFormatException e) {
-
-            }
-            try {
-                if (viDoStr != null && !viDoStr.trim().isEmpty()) {
-                    viDo = Double.parseDouble(viDoStr);
-                }
-            } catch (NumberFormatException e) {
-
-            }
-            
             camera.setKinhDo(kinhDo);
             camera.setViDo(viDo);
             
-
+            // Xử lý upload ảnh
             if (anhCamera != null && !anhCamera.isEmpty()) {
                 String anhPath = cameraService.saveImage(anhCamera);
                 camera.setAnhCamera(anhPath);
             }
             
-
+            // Xử lý upload video
             if (videoFile != null && !videoFile.isEmpty()) {
                 String videoPath = cameraService.saveVideo(videoFile);
                 camera.setVideoUrl(videoPath);

@@ -1,19 +1,23 @@
 package com.example.suco.controller.admin;
 
-import com.example.suco.model.LoaiSuCo;
-import com.example.suco.service.LoaiSuCoService;
-
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.example.suco.model.LoaiSuCo;
+import com.example.suco.service.LoaiSuCoService;
 
 @Controller
 @RequestMapping("/admin/loai-su-co")
@@ -33,7 +37,7 @@ public class LoaiSuCoAdminController {
         return "admin/loai-su-co"; // trỏ tới loai-su-co.html
     }
 
-@PostMapping
+@PostMapping(value = {"", "/api/create"})
 @ResponseBody
 public ResponseEntity<?> createApi(
         @RequestParam String ten,

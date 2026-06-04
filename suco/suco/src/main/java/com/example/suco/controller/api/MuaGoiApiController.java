@@ -22,12 +22,20 @@ public class MuaGoiApiController {
     private GoiService goiService;
 
     private String getUidFromHeader(String authHeader) throws Exception {
-        String token = authHeader.replace("Bearer ", "");
-
-        if ("dev-token".equals(token)) {
-            return "test-user"; 
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("Thiếu hoặc sai Authorization header");
         }
-
+        
+        String token = authHeader.replace("Bearer ", "").trim();
+        
+        if (token.isBlank()) {
+            throw new Exception("Token không được để trống");
+        }
+        
+        if ("dev-token".equals(token)) {
+            return "test-user";
+        }
+        
         FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
         return decodedToken.getUid();
     }
@@ -41,23 +49,77 @@ public class MuaGoiApiController {
     // ĐĂNG KÝ GÓI 
     @PostMapping("/dang-ky")
     public ResponseEntity<?> dangKyMuaGoi(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestBody Map<String, Object> request
+        @RequestHeader(value = "Authorization", required = false) String authHeader,
+        @RequestBody Map<String, Object> request
     ) {
+        String uid;
+        
+        // 1. Chỉ lỗi token mới trả 401
         try {
-            String uid = getUidFromHeader(authHeader);
-
-            Long goiId = Long.valueOf(request.get("goiId").toString());
-            muaGoiService.dangKyGoi(uid, goiId);
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "message", "Đăng ký gói thành công"
-            ));
-
+            uid = getUidFromHeader(authHeader);
         } catch (Exception e) {
             return ResponseEntity.status(401)
-                    .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
+            .body(Map.of(
+                "status", "error",
+                "message", "Xác thực thất bại: " + e.getMessage()
+            ));
+        }
+        
+        // 2. Thiếu goiId là lỗi dữ liệu, trả 400
+        if (request == null || !request.containsKey("goiId") || request.get("goiId") == null) {
+            return ResponseEntity.badRequest()
+            .body(Map.of(
+                "status", "error",
+                "message", "goiId không được để trống"
+            ));
+        }
+        
+        Long goiId;
+        
+        // 3. goiId sai format là lỗi dữ liệu, trả 400
+        try {
+            String rawGoiId = request.get("goiId").toString().trim();
+            
+            if (rawGoiId.isBlank()) {
+                return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "status", "error",
+                    "message", "goiId không được để trống"
+                ));
+            }
+            
+            goiId = Long.valueOf(rawGoiId);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest()
+            .body(Map.of(
+                "status", "error",
+                "message", "goiId sai định dạng"
+            ));
+        }
+        
+        // 4. Lỗi nghiệp vụ không được gom vào 401
+        try {
+            muaGoiService.dangKyGoi(uid, goiId);
+            
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Đăng ký gói thành công"
+            ));
+        
+        } catch (RuntimeException e) {
+            if ("Không tìm thấy gói cứu hộ".equals(e.getMessage())) {
+                return ResponseEntity.status(404)
+                .body(Map.of(
+                    "status", "error",
+                    "message", e.getMessage()
+                ));
+            }
+            
+            return ResponseEntity.badRequest()
+            .body(Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            ));
         }
     }
 

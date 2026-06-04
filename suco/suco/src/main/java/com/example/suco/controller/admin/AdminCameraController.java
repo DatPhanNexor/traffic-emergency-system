@@ -3,6 +3,7 @@ package com.example.suco.controller.admin;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,56 +38,64 @@ public class AdminCameraController {
 
     @GetMapping
     public String hienThiDanhSach(Model model) {
-        // Gọi Service thay vì Repository
         model.addAttribute("danhSachCamera", cameraService.getAllCameras());
         model.addAttribute("listCameraChuaGan", cameraService.getCamerasChuaGan());
         model.addAttribute("activePage", "quan-ly-camera");
-        
         return "admin/quan-ly-camera";
     }
 
     @PostMapping(value = "/them", consumes = "multipart/form-data")
     @ResponseBody 
-    public ResponseEntity<Camera> themCamera(
-            @RequestParam("tenCamera") String tenCamera,
+    public ResponseEntity<?> themCamera(
+            @RequestParam(value = "tenCamera", required = false) String tenCamera,
             @RequestParam(value = "moTa", required = false) String moTa,
             @RequestParam(value = "kinhDo", required = false) String kinhDoStr,
             @RequestParam(value = "viDo", required = false) String viDoStr,
             @RequestParam(value = "anhCamera", required = false) MultipartFile anhCamera,
             @RequestParam(value = "videoFile", required = false) MultipartFile videoFile) {
         try {
+
+            if (tenCamera == null || tenCamera.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tên camera không được để trống!");
+            }
+
+
+            if (tenCamera.length() > 255) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tên camera không được vượt quá 255 ký tự!");
+            }
+
             Camera camera = new Camera();
-            camera.setTenCamera(tenCamera);
-            camera.setMoTa(moTa != null && !moTa.trim().isEmpty() ? moTa : null);
+            camera.setTenCamera(tenCamera.trim());
+            camera.setMoTa(moTa != null && !moTa.trim().isEmpty() ? moTa.trim() : null);
             
-            // Xử lý tọa độ - chuyển từ String sang Double
-            Double kinhDo = null;
-            Double viDo = null;
+
+            Double kinhDo = 0.0;
+            Double viDo = 0.0;
             try {
                 if (kinhDoStr != null && !kinhDoStr.trim().isEmpty()) {
                     kinhDo = Double.parseDouble(kinhDoStr);
                 }
             } catch (NumberFormatException e) {
-                // Bỏ qua nếu không parse được
+
             }
             try {
                 if (viDoStr != null && !viDoStr.trim().isEmpty()) {
                     viDo = Double.parseDouble(viDoStr);
                 }
             } catch (NumberFormatException e) {
-                // Bỏ qua nếu không parse được
+
             }
             
-            camera.setKinhDo(kinhDo != null ? kinhDo : 0.0);
-            camera.setViDo(viDo != null ? viDo : 0.0);
+            camera.setKinhDo(kinhDo);
+            camera.setViDo(viDo);
             
-            // Xử lý upload ảnh
+
             if (anhCamera != null && !anhCamera.isEmpty()) {
                 String anhPath = cameraService.saveImage(anhCamera);
                 camera.setAnhCamera(anhPath);
             }
             
-            // Xử lý upload video demo
+
             if (videoFile != null && !videoFile.isEmpty()) {
                 String videoPath = cameraService.saveVideo(videoFile);
                 camera.setVideoUrl(videoPath);
@@ -94,29 +103,29 @@ public class AdminCameraController {
             
             cameraService.saveCamera(camera);
             return ResponseEntity.ok(camera);
+
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Lỗi hệ thống: " + e.getMessage());
         }
     }
 
-    // THÊM MỚI: API này để hàm loadCameraMarkers() trong JS gọi lấy dữ liệu
     @GetMapping("/all-json")
     @ResponseBody
     public List<Camera> getAllCameraJson() {
         return cameraService.getAllCameras();
     }
 
-@DeleteMapping("/{id}")
-@ResponseBody
-public ResponseEntity<String> xoaCamera(@PathVariable Long id) {
-    if (!cameraRepository.existsById(id)) {
-        return ResponseEntity.status(404).body("Camera không tồn tại!");
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<String> xoaCamera(@PathVariable Long id) {
+        if (!cameraRepository.existsById(id)) {
+            return ResponseEntity.status(404).body("Camera không tồn tại!");
+        }
+        cameraService.deleteCamera(id);
+        return ResponseEntity.ok("Xóa camera thành công!");
     }
-
-    cameraService.deleteCamera(id);
-    return ResponseEntity.ok("Xóa camera thành công!");
-}
 
     @GetMapping("/{id}/detail")
     @ResponseBody
@@ -126,8 +135,6 @@ public ResponseEntity<String> xoaCamera(@PathVariable Long id) {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-
-    // API nhận tọa độ gửi từ frontend để gán cho camera
     @PostMapping("/gan-toa-do/{id}")
     @ResponseBody
     public ResponseEntity<String> ganToaDoCamera(@PathVariable Long id,
@@ -141,18 +148,15 @@ public ResponseEntity<String> xoaCamera(@PathVariable Long id) {
         }).orElse(ResponseEntity.status(404).body("Không tìm thấy camera"));
     }
 
-@GetMapping("/near-by-incident/{id}")
-@ResponseBody
-public List<CameraMapDto> getCameraByIncident(@PathVariable Long id) {
+    @GetMapping("/near-by-incident/{id}")
+    @ResponseBody
+    public List<CameraMapDto> getCameraByIncident(@PathVariable Long id) {
+        BaoCaoSuCo report = baoCaoSuCoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sự cố"));
 
-        System.out.println("🔥 API CALLED: near-by-incident " + id);
-
-    BaoCaoSuCo report = baoCaoSuCoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy sự cố"));
-
-    return cameraService.getCamerasNearIncident(
-            report.getViDo(),
-            report.getKinhDo()
-    );
-}
+        return cameraService.getCamerasNearIncident(
+                report.getViDo(),
+                report.getKinhDo()
+        );
+    }
 }

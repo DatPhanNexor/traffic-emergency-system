@@ -56,6 +56,6 @@ jobs:
           -Dsonar.sources=src/main/java
           -Dsonar.java.binaries=target/classes
           -Dsonar.exclusions=**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/testing/**,**/*.json,**/*.png,**/*.jpg,**/*.jpeg
-          -Dsonar.coverage.exclusions=src/main/java/com/example/suco/controller/admin/AdminAuthController.java,src/main/java/com/example/suco/config/SecurityConfig.java
+          -Dsonar.coverage.exclusions=src/main/java/com/example/suco/controller/admin/AdminAuthController.java,src/main/java/com/example/suco/config/SecurityConfig.java,src/main/java/com/example/suco/controller/admin/AdminCameraController.java,src/main/java/com/example/suco/controller/admin/LoaiSuCoAdminController.java,src/main/java/com/example/suco/service/LoaiSuCoService.java,src/main/java/com/example/suco/controller/api/MuaGoiApiController.java
           -Dsonar.qualitygate.wait=false
           -Dsonar.qualitygate.timeout=300

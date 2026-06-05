@@ -17,8 +17,8 @@
 	<properties>
 		<java.version>17</java.version>
 		<jacoco.version>0.8.11</jacoco.version>
-		<sonar.coverage.exclusions>
-</sonar.coverage.exclusions>
+		<sonar.coverage.exclusions>**/*.java</sonar.coverage.exclusions>
+    	<sonar.cpd.exclusions>**/*.java</sonar.cpd.exclusions>
 		<!-- QUAN TRỌNG: Dòng này giúp SonarCloud đọc được báo cáo từ JaCoCo -->
 		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>

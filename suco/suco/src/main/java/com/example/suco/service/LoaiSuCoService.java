@@ -1,7 +1,11 @@
 package com.example.suco.service;
 
-import com.example.suco.model.LoaiSuCo;
-import com.example.suco.repository.LoaiSuCoRepository;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -9,11 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
+import com.example.suco.model.LoaiSuCo;
+import com.example.suco.repository.LoaiSuCoRepository;
 
 @Service
 public class LoaiSuCoService {
@@ -30,10 +31,11 @@ public class LoaiSuCoService {
     }
 
     /**
-     * FIX CHO ITC_14.3 & ITC_14.4: Chặn trùng tên và tên trống khi tạo mới
+     * FIX SONAR SECURITY: Loại bỏ log dữ liệu trực tiếp từ user (biến ten)
      */
     public LoaiSuCo createLoaiSuCo(String ten, MultipartFile file) throws IOException {
-        log.info("Đang tạo loại sự cố với tên: {}", ten);
+        // Fix Security Hotspot: Không đưa biến 'ten' trực tiếp vào log
+        log.info("Bắt đầu xử lý yêu cầu tạo mới loại sự cố từ Admin.");
 
         // 1. Kiểm tra trống (ITC_14.4)
         if (ten == null || ten.trim().isEmpty()) {
@@ -42,7 +44,7 @@ public class LoaiSuCoService {
 
         String trimmedTen = ten.trim();
 
-        // 2. KIỂM TRA TRÙNG TÊN (Dùng List để tránh lỗi NonUniqueResultException nếu DB đã lỡ trùng)
+        // 2. KIỂM TRA TRÙNG TÊN (Dùng List để tránh lỗi NonUniqueResultException)
         List<LoaiSuCo> existingList = repository.findAllByTen(trimmedTen);
         if (!existingList.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên loại sự cố đã tồn tại");
@@ -73,7 +75,7 @@ public class LoaiSuCoService {
     }
 
     /**
-     * FIX CHO ITC_17.3: Chặn trùng tên khi cập nhật (B04)
+     * Cập nhật loại sự cố (Fix trùng tên B04)
      */
     public LoaiSuCo updateLoaiSuCo(Long id, String ten, MultipartFile file) throws IOException {
         LoaiSuCo entity = findById(id);

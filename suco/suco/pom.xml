@@ -18,9 +18,7 @@
 		<java.version>17</java.version>
 		<jacoco.version>0.8.11</jacoco.version>
 		<sonar.coverage.exclusions>
-			**/AdminCameraController.java,
-			**/LoaiSuCoAdminController.java,
-			**/LoaiSuCoService.java
+			**/AdminCameraController.java,**/LoaiSuCoAdminController.java,**/LoaiSuCoService.java
 </sonar.coverage.exclusions>
 		<!-- QUAN TRỌNG: Dòng này giúp SonarCloud đọc được báo cáo từ JaCoCo -->
 		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>

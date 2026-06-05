@@ -1,29 +1,25 @@
 package com.example.suco.service;
 
-import com.example.suco.model.LoaiSuCo;
-import com.example.suco.repository.LoaiSuCoRepository;
-
-
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
 import java.io.IOException;
-import java.net.http.HttpClient;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.Path;
-import java.nio.file.Files;
-import org.springframework.web.server.ResponseStatusException;
-    import org.slf4j.Logger;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.example.suco.model.LoaiSuCo;
+import com.example.suco.repository.LoaiSuCoRepository;
 
 @Service
 public class LoaiSuCoService {
 
     private static final Logger log = LoggerFactory.getLogger(LoaiSuCoService.class);
-
     private final LoaiSuCoRepository repository;
 
     public LoaiSuCoService(LoaiSuCoRepository repository) {
@@ -34,61 +30,86 @@ public class LoaiSuCoService {
         return repository.findAll();
     }
 
+    /**
+     * FIX SONAR SECURITY: Loại bỏ log dữ liệu trực tiếp từ user (biến ten)
+     */
     public LoaiSuCo createLoaiSuCo(String ten, MultipartFile file) throws IOException {
+        // Fix Security Hotspot: Không đưa biến 'ten' trực tiếp vào log
+        log.info("Bắt đầu xử lý yêu cầu tạo mới loại sự cố từ Admin.");
 
-        log.info("\nAdmin gửi tên loại sự cố: {}", ten);
-    if (ten == null || ten.trim().isEmpty()) {
-        throw new ResponseStatusException(
-            HttpStatus.BAD_REQUEST,
-            "Tên loại sự cố không được để trống"
-        );
-    }
-    
-
-    LoaiSuCo l = new LoaiSuCo();
-    l.setTen(ten);
-
-    if (file != null && !file.isEmpty()) {
-        String filename = file.getOriginalFilename();
-        String uploadDir = System.getProperty("user.dir") + "/uploads/icons/";
-        Path uploadPath = Paths.get(uploadDir);
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        // 1. Kiểm tra trống (ITC_14.4)
+        if (ten == null || ten.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên loại sự cố không được để trống");
         }
 
-        Files.copy(file.getInputStream(),
-                uploadPath.resolve(filename),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        String trimmedTen = ten.trim();
 
-        l.setIconUrl("/uploads/icons/" + filename);
+        // 2. KIỂM TRA TRÙNG TÊN (Dùng List để tránh lỗi NonUniqueResultException)
+        List<LoaiSuCo> existingList = repository.findAllByTen(trimmedTen);
+        if (!existingList.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên loại sự cố đã tồn tại");
+        }
+
+        LoaiSuCo l = new LoaiSuCo();
+        l.setTen(trimmedTen);
+
+        // Xử lý upload file icon
+        if (file != null && !file.isEmpty()) {
+            l.setIconUrl(saveIcon(file));
+        }
+
+        return repository.save(l);
     }
-    log.info("\nSau xử lý, tạo thành công loại sự cố:\nTen: {}\nIcon URL: {}", l.getTen(), l.getIconUrl());
-
-    return repository.save(l);
-}
 
     public void deleteLoaiSuCo(Long id) {
-    LoaiSuCo entity = findById(id);
-    repository.delete(entity);
-}
-
-public LoaiSuCo findById(Long id) {
-    return repository.findById(id)
-        .orElseThrow(() -> new ResponseStatusException(
-            HttpStatus.NOT_FOUND,
-            "Loại sự cố không tồn tại"
-        ));
-}
-public LoaiSuCo updateLoaiSuCo(Long id, String ten, MultipartFile file) throws IOException {
-    LoaiSuCo entity = findById(id);
-
-    if (ten != null && !ten.isEmpty()) {
-        entity.setTen(ten);
+        LoaiSuCo entity = findById(id);
+        repository.delete(entity);
     }
 
-    if (file != null && !file.isEmpty()) {
-        String filename = file.getOriginalFilename();
+    public LoaiSuCo findById(Long id) {
+        return repository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Loại sự cố không tồn tại"
+            ));
+    }
+
+    /**
+     * Cập nhật loại sự cố (Fix trùng tên B04)
+     */
+    public LoaiSuCo updateLoaiSuCo(Long id, String ten, MultipartFile file) throws IOException {
+        LoaiSuCo entity = findById(id);
+
+        // 1. Kiểm tra logic thay đổi tên
+        if (ten != null && !ten.trim().isEmpty()) {
+            String trimmedTen = ten.trim();
+            
+            // Tìm tất cả bản ghi có tên này
+            List<LoaiSuCo> others = repository.findAllByTen(trimmedTen);
+            for (LoaiSuCo other : others) {
+                // Nếu tìm thấy một bản ghi trùng tên mà KHÔNG PHẢI là bản ghi đang sửa -> Báo lỗi
+                if (!other.getId().equals(id)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên loại sự cố đã tồn tại");
+                }
+            }
+            entity.setTen(trimmedTen);
+        } else if (ten != null && ten.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên không được để trống");
+        }
+
+        // 2. Xử lý cập nhật file icon
+        if (file != null && !file.isEmpty()) {
+            entity.setIconUrl(saveIcon(file));
+        }
+
+        return repository.save(entity);
+    }
+
+    /**
+     * Hàm phụ trợ lưu file icon
+     */
+    private String saveIcon(MultipartFile file) throws IOException {
+        String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
         String uploadDir = System.getProperty("user.dir") + "/uploads/icons/";
         Path uploadPath = Paths.get(uploadDir);
 
@@ -100,10 +121,6 @@ public LoaiSuCo updateLoaiSuCo(Long id, String ten, MultipartFile file) throws I
                 uploadPath.resolve(filename),
                 java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-        entity.setIconUrl("/uploads/icons/" + filename);
+        return "/uploads/icons/" + filename;
     }
-
-    return repository.save(entity);
-}
-
 }

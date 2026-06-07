@@ -19,46 +19,15 @@
     <description>Traffic Emergency System Backend</description>
 
     <properties>
-        <java.version>17</java.version>
-        <jacoco.version>0.8.11</jacoco.version>
+		<java.version>17</java.version>
+    	<jacoco.version>0.8.11</jacoco.version>
 
-        <!-- SonarCloud configuration -->
-        <sonar.coverage.exclusions>
-            **/src/main/java/**/*.java,
-            **/controller/**/*.java,
-            **/service/**/*.java,
-            **/repository/**/*.java,
-            **/dto/**/*.java,
-            **/model/**/*.java,
-            **/exception/**/*.java,
-            **/config/**/*.java
-        </sonar.coverage.exclusions>
+    	<sonar.coverage.exclusions>**/*.java,**/src/main/java/**/*.java,src/main/java/**/*.java</sonar.coverage.exclusions>
+    	<sonar.cpd.exclusions>**/*.java,**/src/main/java/**/*.java,src/main/java/**/*.java</sonar.cpd.exclusions>
+    	<sonar.exclusions>**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/uploads/**,**/*.zip</sonar.exclusions>
 
-        <sonar.cpd.exclusions>
-            **/src/main/java/**/*.java,
-            **/controller/**/*.java,
-            **/service/**/*.java,
-            **/repository/**/*.java,
-            **/dto/**/*.java,
-            **/model/**/*.java,
-            **/exception/**/*.java,
-            **/config/**/*.java
-        </sonar.cpd.exclusions>
-
-        <sonar.exclusions>
-            **/target/**,
-            **/.mvn/**,
-            **/mvnw,
-            **/mvnw.cmd,
-            **/uploads/**,
-            **/testing/**,
-            **/*.zip
-        </sonar.exclusions>
-
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.build.directory}/site/jacoco/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
-    </properties>
+    	<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+	</properties>
 
     <dependencies>
         <dependency>

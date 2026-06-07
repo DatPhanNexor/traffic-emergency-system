@@ -56,6 +56,5 @@ jobs:
           -Dsonar.sources=src/main/java
           -Dsonar.java.binaries=target/classes
           -Dsonar.exclusions=**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/testing/**,**/*.json,**/*.png,**/*.jpg,**/*.jpeg
-          -Dsonar.coverage.exclusions=src/main/java/com/example/suco/controller/admin/AdminAuthController.java,src/main/java/com/example/suco/config/SecurityConfig.java,src/main/java/com/example/suco/controller/admin/AdminCameraController.java,src/main/java/com/example/suco/controller/admin/LoaiSuCoAdminController.java,src/main/java/com/example/suco/service/LoaiSuCoService.java,src/main/java/com/example/suco/controller/api/MuaGoiApiController.java,suco\suco\src\main\java\com\example\suco\service\QuaService.java,suco\suco\src\main\java\com\example\suco\service\DoiQuaService.java
-          -Dsonar.qualitygate.wait=false
+          -Dsonar.coverage.exclusions=src/main/java/com/example/suco/controller/admin/AdminAuthController.java,src/main/java/com/example/suco/config/SecurityConfig.java,src/main/java/com/example/suco/controller/admin/AdminCameraController.java,src/main/java/com/example/suco/controller/admin/LoaiSuCoAdminController.java,src/main/java/com/example/suco/service/LoaiSuCoService.java,src/main/java/com/example/suco/controller/api/MuaGoiApiController.java,src/main/java/com/example/suco/service/QuaService.java,src/main/java/com/example/suco/service/DoiQuaService.java          -Dsonar.qualitygate.wait=false
           -Dsonar.qualitygate.timeout=300

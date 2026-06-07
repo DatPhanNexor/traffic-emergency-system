@@ -7,4 +7,5 @@ import java.util.List;
 @Repository
 public interface QuaRepository extends JpaRepository<Qua, Long> {
     List<Qua> findByTrangThai(Qua.TrangThai trangThai);
+    boolean existsByTenIgnoreCase(String ten);
 }

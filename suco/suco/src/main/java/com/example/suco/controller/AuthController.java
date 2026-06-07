@@ -85,8 +85,7 @@ public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authHe
         }
 
         String token = authHeader.substring(7);
-
-        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
         String uid = decodedToken.getUid();
 
         User user = userService.getUserInfo(uid);

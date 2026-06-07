@@ -6,6 +6,9 @@ import com.example.suco.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
@@ -29,7 +32,7 @@ public boolean thucHienDoiQua(String uid, DoiQuaDto dto) {
 
     // 1. Check trạng thái
     if (qua.getTrangThai() != Qua.TrangThai.HOAT_DONG) {
-        throw new RuntimeException("Quà không còn khả dụng");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quà không còn khả dụng");
     }
 
     // 2. Check hết hạn
@@ -44,7 +47,7 @@ public boolean thucHienDoiQua(String uid, DoiQuaDto dto) {
 
     // 3. Check điểm (now validates against total points needed)
     if (user.getTotalPoints() < diemCanTieu) {
-        throw new RuntimeException("Không đủ điểm để đổi quà");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không đủ điểm để đổi quà");
     }
 
     // 4. Trừ điểm (based on total quantity)

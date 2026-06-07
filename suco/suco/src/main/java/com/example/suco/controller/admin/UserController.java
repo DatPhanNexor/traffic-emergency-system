@@ -77,6 +77,16 @@ public class UserController {
         ));
     }
 
+    // Handle empty UID DELETE requests (e.g., DELETE /admin/quan-ly-user/delete/)
+    @DeleteMapping({"/delete", "/delete/"})
+    @ResponseBody
+    public ResponseEntity<?> deleteUserEmptyUid() {
+        return ResponseEntity.badRequest().body(Map.of(
+                "error", "INVALID_UID",
+                "message", "Uid không được để trống."
+        ));
+    }
+
     // ===================== RESET SPAM =====================
     @GetMapping("/reset-spam/{uid}")
     public String resetSpam(@PathVariable String uid) {

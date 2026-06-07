@@ -1,16 +1,13 @@
 package com.example.suco.repository;
 
-import com.example.suco.model.LoaiSuCo;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.suco.model.LoaiSuCo;
+
 public interface LoaiSuCoRepository extends JpaRepository<LoaiSuCo, Long> {
-
-   
-
     Optional<LoaiSuCo> findByTen(String ten);
+    List<LoaiSuCo> findAllByTen(String ten); 
 }

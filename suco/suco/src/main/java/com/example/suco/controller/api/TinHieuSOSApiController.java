@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,6 @@ public class TinHieuSOSApiController {
 
     private static final String MSG_AUTH_FAILED = "Xác thực thất bại";
     private static final String MSG_NOT_LOGGED_IN = "Chưa đăng nhập";
-    private static final String MSG_SOS_NOT_FOUND = "Không tìm thấy SOS";
     private static final String MSG_CANCEL_SUCCESS = "Đã hủy yêu cầu SOS thành công";
     private static final String MSG_CANCEL_USER = "Bạn đã hủy yêu cầu cứu hộ";
 
@@ -420,7 +420,7 @@ public class TinHieuSOSApiController {
     private long tinhThoiGianConLai(ThongTinDieuPhoi dieuPhoi) {
         long giayDaQua = Duration.between(
                 dieuPhoi.getThoiGianGuiTinCuoi(),
-                LocalDateTime.now()
+                LocalDateTime.now(ZoneId.systemDefault())
         ).getSeconds();
 
         return Math.max(0, 60 - giayDaQua);

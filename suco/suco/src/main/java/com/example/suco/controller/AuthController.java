@@ -26,7 +26,7 @@ public class AuthController {
     }
 
 @GetMapping("/all-users")
-public ResponseEntity<?> getAllUsersForTest() {
+public ResponseEntity<Object> getAllUsersForTest() {
     try {
         // Gọi service để lấy toàn bộ danh sách
         return ResponseEntity.ok(userService.getAllUsers());
@@ -35,7 +35,7 @@ public ResponseEntity<?> getAllUsersForTest() {
     }
 }
     @PostMapping("/sync")
-public ResponseEntity<?> sync(@RequestBody AuthRequest request) {
+public ResponseEntity<Object> sync(@RequestBody AuthRequest request) {
     try {
         String uid;
         String email;
@@ -76,7 +76,7 @@ public ResponseEntity<?> sync(@RequestBody AuthRequest request) {
 
         
 @GetMapping("/me")
-public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authHeader) {
+public ResponseEntity<Object> getMyInfo(@RequestHeader("Authorization") String authHeader) {
     try {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body(
@@ -106,7 +106,7 @@ FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
 }
 
     @GetMapping("/{uid}")
-    public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
+    public ResponseEntity<Object> getUserByUid(@PathVariable String uid) {
         if (!isValidUid(uid)) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "INVALID_UID",

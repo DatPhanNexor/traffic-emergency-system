@@ -106,15 +106,30 @@ public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authHe
     }
 }
 
-     private boolean isValidUid(String uid) {
-        return uid != null && uid.length() <= 256 && uid.matches("^[A-Za-z0-9_-]+$");
-    }
-    
-}
+    @GetMapping("/{uid}")
+    public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
+        if (!isValidUid(uid)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_UID",
+                    "message", "Uid không hợp lệ."
+            ));
+        }
 
-// 4. SỬA TẠI ĐÂY: Gọi userService.getUserInfo thay vì userRepository
-        // User user = userService.getUserInfo(uid);
-        // if (user != null) {
-        //     return ResponseEntity.ok(user);
-        // }
-        // return ResponseEntity.notFound().build();
+        User user = userService.getUserInfo(uid);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "USER_NOT_FOUND",
+                    "message", "Không tìm thấy user với uid: " + uid
+            ));
+        }
+
+        return ResponseEntity.ok(user);
+    }
+
+    private boolean isValidUid(String uid) {
+        return uid != null
+                && !uid.isBlank()
+                && uid.length() <= 256
+                && uid.matches("^[A-Za-z0-9_-]+$");
+    }
+}

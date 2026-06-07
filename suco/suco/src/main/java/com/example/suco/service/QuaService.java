@@ -37,6 +37,18 @@
         log.info("\nMô tả: {}", quaDto.getMoTa());
         log.info("\nNgày kết thúc: {}", quaDto.getNgayKetThuc());
 
+        // ITC_47.4: Kiểm tra tên không rỗng
+        if (quaDto.getTen() == null || quaDto.getTen().isBlank()) {
+            log.error("ADD QUÀ FAILED - ten NULL hoặc rỗng | dto={}", quaDto);
+            throw new IllegalArgumentException("Tên quà không được để trống");
+        }
+
+        // ITC_47.4: Kiểm tra tên không trùng lặp
+        if (quaRepository.existsByTenIgnoreCase(quaDto.getTen().trim())) {
+            log.error("ADD QUÀ FAILED - tên đã tồn tại | ten={}", quaDto.getTen());
+            throw new IllegalArgumentException("Tên quà đã tồn tại");
+        }
+
         if (quaDto.getDiem() == null) {
             log.error("ADD QUÀ FAILED - diem NULL | dto={}", quaDto);
             throw new IllegalArgumentException("Điểm đổi quà không được để trống");

@@ -1,7 +1,6 @@
 package com.example.suco.controller;
 
-import com.example.suco.controller.admin.AdminUserController;
-import com.example.suco.controller.admin.UserController;
+
 import com.example.suco.model.User;
 import com.example.suco.repository.UserRepository;
 import com.example.suco.service.UserService;
@@ -23,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-public class ControllerUnitTests {
+class ControllerUnitTests {
 
     @Autowired
     private MockMvc mockMvc;

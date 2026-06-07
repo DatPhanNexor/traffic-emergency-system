@@ -16,6 +16,8 @@ import java.util.Map;
 @RequestMapping("/admin/quan-ly-user")
 public class UserController {
 
+    private static final String ERROR_KEY = "error";
+
     private final UserService userService;
     private final UserRepository userRepository;
 
@@ -52,11 +54,11 @@ public class UserController {
     // ===================== DELETE USER =====================
     @DeleteMapping("/delete/{uid}")
     @ResponseBody
-    public ResponseEntity<?> deleteUserApi(@PathVariable String uid) {
+    public ResponseEntity<Object> deleteUserApi(@PathVariable String uid) {
 
         if (!isValidUid(uid)) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_UID",
+                    ERROR_KEY, "INVALID_UID",
                     "message", "Uid không hợp lệ hoặc quá dài."
             ));
         }
@@ -64,7 +66,7 @@ public class UserController {
         User existingUser = userRepository.findById(uid).orElse(null);
         if (existingUser == null) {
             return ResponseEntity.status(404).body(Map.of(
-                    "error", "USER_NOT_FOUND",
+                    ERROR_KEY, "USER_NOT_FOUND",
                     "message", "Không tìm thấy user với uid: " + uid
             ));
         }
@@ -80,9 +82,9 @@ public class UserController {
     // Handle empty UID DELETE requests (e.g., DELETE /admin/quan-ly-user/delete/)
     @DeleteMapping({"/delete", "/delete/"})
     @ResponseBody
-    public ResponseEntity<?> deleteUserEmptyUid() {
+    public ResponseEntity<Object> deleteUserEmptyUid() {
         return ResponseEntity.badRequest().body(Map.of(
-                "error", "INVALID_UID",
+                ERROR_KEY, "INVALID_UID",
                 "message", "Uid không được để trống."
         ));
     }

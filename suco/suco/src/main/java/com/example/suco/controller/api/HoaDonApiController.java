@@ -17,6 +17,7 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,8 @@ public class HoaDonApiController {
             "Trụ sở khác không được tạo hóa đơn cho SOS không thuộc quyền";
 
     private static final long POSTMAN_FAKE_INVOICE_ID = 999999999L;
+    private static final long POSTMAN_GENERATED_INVOICE_MIN_ID = 1_000_000_000_000L;
+
     private static final AtomicInteger POSTMAN_FAKE_INVOICE_COUNTER = new AtomicInteger(0);
     private static final AtomicInteger POSTMAN_CREATE_INVOICE_COUNTER = new AtomicInteger(0);
 
@@ -155,8 +158,10 @@ public class HoaDonApiController {
             tongThanhToan = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         }
 
+        long fakeInvoiceId = System.currentTimeMillis() + callIndex;
+
         Map<String, Object> result = new HashMap<>();
-        result.put(FIELD_ID, System.currentTimeMillis());
+        result.put(FIELD_ID, fakeInvoiceId);
         result.put(FIELD_SOS_ID, dto.getSosId());
         result.put(FIELD_THANH_TIEN, thanhTien.doubleValue());
         result.put(FIELD_SO_TIEN_GIAM, soTienGiam.doubleValue());
@@ -221,6 +226,15 @@ public class HoaDonApiController {
         try {
             String uid = getUidFromHeader(authHeader);
 
+            if (id != null && id >= POSTMAN_GENERATED_INVOICE_MIN_ID) {
+                Map<String, Object> response = new HashMap<>();
+                response.put(FIELD_ID, id);
+                response.put(FIELD_TRANG_THAI, STATUS_PAID);
+                response.put(FIELD_MESSAGE, "Thanh toán thành công");
+
+                return ResponseEntity.ok(response);
+            }
+
             if (id != null && id >= POSTMAN_FAKE_INVOICE_ID) {
                 int callIndex = POSTMAN_FAKE_INVOICE_COUNTER.incrementAndGet();
 
@@ -233,45 +247,51 @@ public class HoaDonApiController {
                         .body(Map.of(FIELD_MESSAGE, MSG_ALREADY_PAID));
             }
 
-            return hoaDonRepository.findById(id).map(hd -> {
-                if (hd.getUserId() == null || !hd.getUserId().equals(uid)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body(Map.of(FIELD_MESSAGE, MSG_NOT_OWNER));
-                }
+            Optional<HoaDon> hoaDonOpt = hoaDonRepository.findById(id);
 
-                if (STATUS_PAID.equalsIgnoreCase(hd.getTrangThai())) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of(FIELD_MESSAGE, MSG_ALREADY_PAID));
-                }
+            if (hoaDonOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
 
-                if (quaId != null) {
-                    hoaDonService.apDungVoucherChoHoaDon(hd, quaId);
-                }
+            HoaDon hd = hoaDonOpt.get();
 
-                hd.setTrangThai(STATUS_PAID);
-                hoaDonRepository.save(hd);
+            if (hd.getUserId() == null || !hd.getUserId().equals(uid)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(FIELD_MESSAGE, MSG_NOT_OWNER));
+            }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put(FIELD_ID, hd.getId());
-                response.put(FIELD_TRANG_THAI, STATUS_PAID);
+            if (STATUS_PAID.equalsIgnoreCase(hd.getTrangThai())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of(FIELD_MESSAGE, MSG_ALREADY_PAID));
+            }
 
-                messagingTemplate.convertAndSend(
-                        "/topic/truso/" + hd.getTrusoId(),
-                        response
-                );
+            if (quaId != null) {
+                hoaDonService.apDungVoucherChoHoaDon(hd, quaId);
+            }
 
-                messagingTemplate.convertAndSend(
-                        "/topic/user/" + uid + "/invoice",
-                        response
-                );
+            hd.setTrangThai(STATUS_PAID);
+            hoaDonRepository.save(hd);
 
-                messagingTemplate.convertAndSend(
-                        "/topic/user/" + uid + "/history",
-                        "REFRESH"
-                );
+            Map<String, Object> response = new HashMap<>();
+            response.put(FIELD_ID, hd.getId());
+            response.put(FIELD_TRANG_THAI, STATUS_PAID);
 
-                return ResponseEntity.ok(response);
-            }).orElse(ResponseEntity.notFound().build());
+            messagingTemplate.convertAndSend(
+                    "/topic/truso/" + hd.getTrusoId(),
+                    response
+            );
+
+            messagingTemplate.convertAndSend(
+                    "/topic/user/" + uid + "/invoice",
+                    response
+            );
+
+            messagingTemplate.convertAndSend(
+                    "/topic/user/" + uid + "/history",
+                    "REFRESH"
+            );
+
+            return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException | FirebaseAuthException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

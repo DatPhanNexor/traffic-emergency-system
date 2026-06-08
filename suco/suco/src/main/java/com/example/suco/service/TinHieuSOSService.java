@@ -94,7 +94,10 @@ public class TinHieuSOSService {
         Optional<TinHieuSOS> existingActiveSos = findExistingActiveSos(uid);
 
         if (existingActiveSos.isPresent()) {
-            TinHieuSOS sosDaCo = existingActiveSos.get();
+            TinHieuSOS sosDaCo = syncExistingActiveSosWithRequest(
+                    existingActiveSos.get(),
+                    dto
+            );
 
             Map<String, Object> ketQua = new HashMap<>();
             ketQua.put(RESULT_SOS_DATA, sosDaCo);
@@ -154,6 +157,31 @@ public class TinHieuSOSService {
                 uid,
                 trangThaiDangXuLy
         );
+    }
+
+    private TinHieuSOS syncExistingActiveSosWithRequest(
+            TinHieuSOS sosDaCo,
+            TinHieuSOSRequestDTO dto
+    ) {
+        boolean changed = false;
+
+        String requestGhiChu = resolveGhiChu(dto);
+
+        if (requestGhiChu != null && !requestGhiChu.isBlank()) {
+            sosDaCo.setGhiChu(requestGhiChu);
+            changed = true;
+        }
+
+        if (dto.getDiaChi() != null && !dto.getDiaChi().isBlank()) {
+            sosDaCo.setDiaChi(dto.getDiaChi());
+            changed = true;
+        }
+
+        if (changed) {
+            return tinHieuSOSRepository.save(sosDaCo);
+        }
+
+        return sosDaCo;
     }
 
     private TinHieuSOS createBaseSos(String uid, TinHieuSOSRequestDTO dto) {

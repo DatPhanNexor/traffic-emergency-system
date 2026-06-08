@@ -17,6 +17,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,6 @@ public class TinHieuSOSService {
     private static final String TOPIC_HISTORY_SUFFIX = "/history";
     private static final String TOPIC_DIEU_PHOI_SUFFIX = "/dieu-phoi";
 
-    private static final String MSG_DUPLICATE_SOS = "User đang có yêu cầu SOS chưa hoàn tất";
     private static final String MSG_VIP_ASSIGNED_PREFIX = "Bạn có gói đặc quyền! Trụ sở ";
     private static final String MSG_VIP_ASSIGNED_SUFFIX = " đang đến ngay.";
     private static final String MSG_FALLBACK_ADDRESS = "Yêu cầu cứu hộ tại: ";
@@ -90,7 +90,22 @@ public class TinHieuSOSService {
     @Transactional
     public Map<String, Object> xuLyTinHieuSOS(String uid, TinHieuSOSRequestDTO dto) {
         validateRequestDto(dto);
-        preventDuplicateActiveSos(uid);
+
+        Optional<TinHieuSOS> existingActiveSos = findExistingActiveSos(uid);
+
+        if (existingActiveSos.isPresent()) {
+            TinHieuSOS sosDaCo = syncExistingActiveSosWithRequest(
+                    existingActiveSos.get(),
+                    dto
+            );
+
+            Map<String, Object> ketQua = new HashMap<>();
+            ketQua.put(RESULT_SOS_DATA, sosDaCo);
+            ketQua.put(RESULT_TRU_SO_GAN_NHAT, null);
+            ketQua.put(RESULT_THONG_TIN_DIEU_PHOI, null);
+
+            return ketQua;
+        }
 
         TinHieuSOS sos = createBaseSos(uid, dto);
 
@@ -132,13 +147,41 @@ public class TinHieuSOSService {
         }
     }
 
-    private void preventDuplicateActiveSos(String uid) {
-        List<String> trangThaiDangXuLy = List.of(STATUS_CHO_XU_LY, STATUS_DANG_XU_LY);
-        boolean daCoSosActive = tinHieuSOSRepository.existsByUserIdAndTrangThaiIn(uid, trangThaiDangXuLy);
+    private Optional<TinHieuSOS> findExistingActiveSos(String uid) {
+        List<String> trangThaiDangXuLy = List.of(
+                STATUS_CHO_XU_LY,
+                STATUS_DANG_XU_LY
+        );
 
-        if (daCoSosActive) {
-            throw new IllegalStateException(MSG_DUPLICATE_SOS);
+        return tinHieuSOSRepository.findFirstByUserIdAndTrangThaiInOrderByCreatedAtDesc(
+                uid,
+                trangThaiDangXuLy
+        );
+    }
+
+    private TinHieuSOS syncExistingActiveSosWithRequest(
+            TinHieuSOS sosDaCo,
+            TinHieuSOSRequestDTO dto
+    ) {
+        boolean changed = false;
+
+        String requestGhiChu = resolveGhiChu(dto);
+
+        if (requestGhiChu != null && !requestGhiChu.isBlank()) {
+            sosDaCo.setGhiChu(requestGhiChu);
+            changed = true;
         }
+
+        if (dto.getDiaChi() != null && !dto.getDiaChi().isBlank()) {
+            sosDaCo.setDiaChi(dto.getDiaChi());
+            changed = true;
+        }
+
+        if (changed) {
+            return tinHieuSOSRepository.save(sosDaCo);
+        }
+
+        return sosDaCo;
     }
 
     private TinHieuSOS createBaseSos(String uid, TinHieuSOSRequestDTO dto) {
@@ -229,10 +272,16 @@ public class TinHieuSOSService {
         sosDaLuu.setIdTruSoTiepNhan(truSoGanNhat.getId());
         sosDaLuu.setTrangThai(STATUS_DANG_XU_LY);
 
-        dieuPhoiService.danhDauDaTiepNhan(sosDaLuu.getId(), sosDaLuu.getIdTruSoTiepNhan());
+        dieuPhoiService.danhDauDaTiepNhan(
+                sosDaLuu.getId(),
+                sosDaLuu.getIdTruSoTiepNhan()
+        );
 
         sendVipRealtimeMessageToUser(sosDaLuu, truSoGanNhat);
-        messagingTemplate.convertAndSend(TOPIC_TRU_SO_PREFIX + sosDaLuu.getIdTruSoTiepNhan(), sosDaLuu);
+        messagingTemplate.convertAndSend(
+                TOPIC_TRU_SO_PREFIX + sosDaLuu.getIdTruSoTiepNhan(),
+                sosDaLuu
+        );
 
         notifyOtherTruSoToRemoveSos(sosDaLuu, thongTinDieuPhoi);
     }
@@ -276,7 +325,10 @@ public class TinHieuSOSService {
             }
         }
 
-        dieuPhoiService.danhDauDaTiepNhan(sosDaLuu.getId(), sosDaLuu.getIdTruSoTiepNhan());
+        dieuPhoiService.danhDauDaTiepNhan(
+                sosDaLuu.getId(),
+                sosDaLuu.getIdTruSoTiepNhan()
+        );
     }
 
     private void sendFinalRealtimeMessages(TinHieuSOS sosDaLuu) {
@@ -292,13 +344,20 @@ public class TinHieuSOSService {
             String extension = prefix.contains("audio") ? AUDIO_EXTENSION : IMAGE_EXTENSION;
             String fileName = System.currentTimeMillis() + "_" + prefix + extension;
 
-            Path uploadPath = Paths.get(System.getProperty("user.dir"), UPLOAD_FOLDER, SOS_FOLDER);
+            Path uploadPath = Paths.get(
+                    System.getProperty("user.dir"),
+                    UPLOAD_FOLDER,
+                    SOS_FOLDER
+            );
 
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            String base64Content = base64Data.contains(",") ? base64Data.split(",")[1] : base64Data;
+            String base64Content = base64Data.contains(",")
+                    ? base64Data.split(",")[1]
+                    : base64Data;
+
             byte[] bytes = Base64.getDecoder().decode(base64Content);
 
             Files.write(uploadPath.resolve(fileName), bytes);

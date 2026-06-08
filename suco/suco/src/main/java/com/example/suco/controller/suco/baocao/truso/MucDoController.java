@@ -33,4 +33,12 @@ public class MucDoController {
 
         return ResponseEntity.ok(result);
     }
+
+    @PatchMapping("/api/map/su-co/cap-nhat-muc-do/{id}")
+    public ResponseEntity<?> capNhatMucDoMapApi(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            HttpSession session) {
+        return capNhatMucDo(id, body, session);
+    }
 }

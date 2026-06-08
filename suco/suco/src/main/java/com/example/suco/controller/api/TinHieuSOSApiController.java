@@ -113,6 +113,37 @@ public class TinHieuSOSApiController {
         }
     }
 
+    @GetMapping("/my-active")
+    public ResponseEntity<Object> getMyActiveSos(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        String uid;
+
+        try {
+            uid = getUidFromHeader(authHeader);
+        } catch (IllegalArgumentException | FirebaseAuthException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MSG_AUTH_FAILED + ": " + e.getMessage());
+        }
+
+        List<String> activeStatuses = List.of(
+                STATUS_CHO_XU_LY,
+                STATUS_DANG_XU_LY
+        );
+
+        Optional<TinHieuSOS> activeSos =
+                tinHieuSOSRepository.findFirstByUserIdAndTrangThaiInOrderByCreatedAtDesc(
+                        uid,
+                        activeStatuses
+                );
+
+        if (activeSos.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(activeSos.get());
+    }
+
     @GetMapping("/active")
     public ResponseEntity<Object> getSosActive(
             @RequestParam(required = false) String status,

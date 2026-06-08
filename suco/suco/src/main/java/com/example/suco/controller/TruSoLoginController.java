@@ -153,4 +153,23 @@ public List<TinHieuSOS> sosCuaToi(HttpSession session) {
     return tinHieuSOSRepository.findActiveByTruSo(current.getId());
 }
 
+    @GetMapping("/api/session")
+    @ResponseBody
+    public ResponseEntity<?> getCurrentSession(HttpSession session) {
+        Object current = session.getAttribute("currentTruSo");
+
+        if (current == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "message", "Trụ sở chưa đăng nhập"
+            ));
+        }
+
+        TruSo t = (TruSo) current;
+        return ResponseEntity.ok(Map.of(
+                "id", t.getId(),
+                "tenTruSo", t.getTenTruSo(),
+                "tenDangNhap", t.getTenDangNhap()
+        ));
+    }
+
 }

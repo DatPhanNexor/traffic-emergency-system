@@ -18,7 +18,7 @@ public class SecurityConfig {
     private static final String ADMIN_URL_PATTERN = "/admin/**";
     private static final String ADMIN_LOGIN_URL = "/admin/login";
     private static final String API_GOI_URL_PATTERN = "/api/goi/**";
-    private static final String API_ADMIN_USER_URL_PATTERN = "/api/admin/quan-ly-user/**";
+    private static final String API_ADMIN_USER_URL_PATTERN = "/api/admin/users/**";
     private static final String API_AUTH_ALL_USERS_URL = "/api/auth/all-users";
     private static final String API_AUTH_URL_PATTERN = "/api/auth/**";
     private static final String API_MAP_URL_PATTERN = "/api/map/**";

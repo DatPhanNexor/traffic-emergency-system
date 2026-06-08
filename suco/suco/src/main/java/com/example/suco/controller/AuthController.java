@@ -26,7 +26,7 @@ public class AuthController {
     }
 
 @GetMapping("/all-users")
-public ResponseEntity<?> getAllUsersForTest() {
+public ResponseEntity<Object> getAllUsersForTest() {
     try {
         // Gọi service để lấy toàn bộ danh sách
         return ResponseEntity.ok(userService.getAllUsers());
@@ -35,7 +35,7 @@ public ResponseEntity<?> getAllUsersForTest() {
     }
 }
     @PostMapping("/sync")
-public ResponseEntity<?> sync(@RequestBody AuthRequest request) {
+public ResponseEntity<Object> sync(@RequestBody AuthRequest request) {
     try {
         String uid;
         String email;
@@ -76,7 +76,7 @@ public ResponseEntity<?> sync(@RequestBody AuthRequest request) {
 
         
 @GetMapping("/me")
-public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authHeader) {
+public ResponseEntity<Object> getMyInfo(@RequestHeader("Authorization") String authHeader) {
     try {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body(
@@ -85,8 +85,7 @@ public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authHe
         }
 
         String token = authHeader.substring(7);
-
-        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
         String uid = decodedToken.getUid();
 
         User user = userService.getUserInfo(uid);
@@ -106,15 +105,30 @@ public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authHe
     }
 }
 
-     private boolean isValidUid(String uid) {
-        return uid != null && uid.length() <= 256 && uid.matches("^[A-Za-z0-9_-]+$");
-    }
-    
-}
+    @GetMapping("/{uid}")
+    public ResponseEntity<Object> getUserByUid(@PathVariable String uid) {
+        if (!isValidUid(uid)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_UID",
+                    "message", "Uid không hợp lệ."
+            ));
+        }
 
-// 4. SỬA TẠI ĐÂY: Gọi userService.getUserInfo thay vì userRepository
-        // User user = userService.getUserInfo(uid);
-        // if (user != null) {
-        //     return ResponseEntity.ok(user);
-        // }
-        // return ResponseEntity.notFound().build();
+        User user = userService.getUserInfo(uid);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "USER_NOT_FOUND",
+                    "message", "Không tìm thấy user với uid: " + uid
+            ));
+        }
+
+        return ResponseEntity.ok(user);
+    }
+
+    private boolean isValidUid(String uid) {
+        return uid != null
+                && !uid.isBlank()
+                && uid.length() <= 256
+                && uid.matches("^[A-Za-z0-9_-]+$");
+    }
+}

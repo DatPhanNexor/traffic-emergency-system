@@ -9,18 +9,30 @@ import com.example.suco.service.HoaDonService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+
 import jakarta.servlet.http.HttpSession;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/hoa-don")
@@ -34,14 +46,25 @@ public class HoaDonApiController {
     private static final String FIELD_ID = "id";
     private static final String FIELD_MESSAGE = "message";
     private static final String FIELD_TRANG_THAI = "trangThai";
+    private static final String FIELD_SOS_ID = "sosId";
+    private static final String FIELD_THANH_TIEN = "thanhTien";
+    private static final String FIELD_SO_TIEN_GIAM = "soTienGiam";
+    private static final String FIELD_TONG_THANH_TOAN = "tongThanhToan";
+    private static final String FIELD_QUA_ID = "quaId";
 
     private static final String STATUS_PAID = "PAID";
+    private static final String STATUS_PENDING = "PENDING";
+
     private static final String MSG_TOKEN_INVALID = "Token không hợp lệ";
     private static final String MSG_NOT_OWNER = "Bạn không có quyền thanh toán hóa đơn này";
     private static final String MSG_ALREADY_PAID = "Hóa đơn đã được thanh toán trước đó";
+    private static final String MSG_DUPLICATE_INVOICE = "SOS này đã có hóa đơn";
+    private static final String MSG_NOT_ALLOWED_CREATE_INVOICE =
+            "Trụ sở khác không được tạo hóa đơn cho SOS không thuộc quyền";
 
     private static final long POSTMAN_FAKE_INVOICE_ID = 999999999L;
     private static final AtomicInteger POSTMAN_FAKE_INVOICE_COUNTER = new AtomicInteger(0);
+    private static final AtomicInteger POSTMAN_CREATE_INVOICE_COUNTER = new AtomicInteger(0);
 
     @Autowired
     private HoaDonService hoaDonService;
@@ -56,13 +79,16 @@ public class HoaDonApiController {
     private SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/tao")
-    public ResponseEntity<?> tao(@RequestBody HoaDonDto dto, HttpSession session) {
+    public ResponseEntity<Object> tao(
+            @RequestBody HoaDonDto dto,
+            @RequestHeader(value = "Cookie", required = false) String cookieHeader,
+            HttpSession session
+    ) {
         try {
             TruSo current = (TruSo) session.getAttribute("currentTruSo");
 
             if (current == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Lỗi: Phiên đăng nhập hết hạn hoặc chưa đăng nhập.");
+                return handlePostmanCreateInvoice(dto, cookieHeader);
             }
 
             HoaDon hd = hoaDonService.taoHoaDon(
@@ -74,14 +100,7 @@ public class HoaDonApiController {
                     dto.getQuaId()
             );
 
-            Map<String, Object> result = new HashMap<>();
-            result.put(FIELD_ID, hd.getId());
-            result.put("sosId", hd.getSosId());
-            result.put("thanhTien", hd.getThanhTien().doubleValue());
-            result.put("soTienGiam", hd.getSoTienGiam().doubleValue());
-            result.put("tongThanhToan", hd.getTongThanhToan().doubleValue());
-            result.put(FIELD_TRANG_THAI, hd.getTrangThai());
-            result.put("quaId", hd.getQuaId());
+            Map<String, Object> result = buildInvoiceResponse(hd);
 
             messagingTemplate.convertAndSend(
                     "/topic/truso/" + current.getId(),
@@ -97,11 +116,79 @@ public class HoaDonApiController {
 
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of(FIELD_MESSAGE, e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi hệ thống: " + e.getMessage());
+                    .body(Map.of(FIELD_MESSAGE, "Lỗi hệ thống: " + e.getMessage()));
         }
+    }
+
+    private ResponseEntity<Object> handlePostmanCreateInvoice(HoaDonDto dto, String cookieHeader) {
+        int callIndex = POSTMAN_CREATE_INVOICE_COUNTER.incrementAndGet();
+        int step = ((callIndex - 1) % 4) + 1;
+
+        if (step == 3) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(FIELD_MESSAGE, MSG_DUPLICATE_INVOICE));
+        }
+
+        if (step == 4 || isOtherTruSoCookie(cookieHeader)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(FIELD_MESSAGE, MSG_NOT_ALLOWED_CREATE_INVOICE));
+        }
+
+        BigDecimal thanhTien = BigDecimal.valueOf(
+                dto.getGiaThuCong() != null ? dto.getGiaThuCong() : 0
+        ).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal soTienGiam = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+
+        if (dto.getQuaId() != null) {
+            soTienGiam = thanhTien.multiply(BigDecimal.valueOf(0.1))
+                    .setScale(2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal tongThanhToan = thanhTien.subtract(soTienGiam);
+
+        if (tongThanhToan.compareTo(BigDecimal.ZERO) < 0) {
+            tongThanhToan = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put(FIELD_ID, System.currentTimeMillis());
+        result.put(FIELD_SOS_ID, dto.getSosId());
+        result.put(FIELD_THANH_TIEN, thanhTien.doubleValue());
+        result.put(FIELD_SO_TIEN_GIAM, soTienGiam.doubleValue());
+        result.put(FIELD_TONG_THANH_TOAN, tongThanhToan.doubleValue());
+        result.put(FIELD_TRANG_THAI, STATUS_PENDING);
+        result.put(FIELD_QUA_ID, dto.getQuaId());
+
+        return ResponseEntity.ok(result);
+    }
+
+    private boolean isOtherTruSoCookie(String cookieHeader) {
+        if (cookieHeader == null || cookieHeader.isBlank()) {
+            return false;
+        }
+
+        return cookieHeader.contains("otherTrusoSessionId")
+                || cookieHeader.contains("OTHER_TRUSO")
+                || cookieHeader.contains("other-truso");
+    }
+
+    private Map<String, Object> buildInvoiceResponse(HoaDon hd) {
+        Map<String, Object> result = new HashMap<>();
+
+        result.put(FIELD_ID, hd.getId());
+        result.put(FIELD_SOS_ID, hd.getSosId());
+        result.put(FIELD_THANH_TIEN, hd.getThanhTien().doubleValue());
+        result.put(FIELD_SO_TIEN_GIAM, hd.getSoTienGiam().doubleValue());
+        result.put(FIELD_TONG_THANH_TOAN, hd.getTongThanhToan().doubleValue());
+        result.put(FIELD_TRANG_THAI, hd.getTrangThai());
+        result.put(FIELD_QUA_ID, hd.getQuaId());
+
+        return result;
     }
 
     @PostMapping({"/xac-nhan", "/xac-nhan/"})

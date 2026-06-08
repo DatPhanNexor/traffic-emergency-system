@@ -85,7 +85,7 @@ public class UserBaoCaoService {
                 .toList();
     }
 
-     private String maskUid(String uid) {
+    private String maskUid(String uid) {
 
         if (uid == null) {
             return "null";
@@ -102,7 +102,6 @@ public class UserBaoCaoService {
             BaoCaoSuCo report,
             String base64FullData
     ) {
-
         LoaiSuCo loaiSuCo =
                 loaiSuCoRepository.findById(
                                 report.getLoaiSuCo().getId()
@@ -125,6 +124,80 @@ public class UserBaoCaoService {
             return ai;
         }
 
+        User currentReporter =
+                userRepository.findById(uid).orElse(null);
+
+        // Same-user duplicate check across history (skip canceled).
+        BaoCaoSuCo ownDuplicate = null;
+        Double ownMatchedDistance = null;
+
+        List<BaoCaoSuCo> userReports =
+                reportRepository.findByReporterUid(uid);
+
+        for (BaoCaoSuCo existing : userReports) {
+
+            if (existing.getLoaiSuCo() == null
+                    || existing.getLoaiSuCo().getId() == null
+                    || existing.getViDo() == null
+                    || existing.getKinhDo() == null) {
+                continue;
+            }
+
+            if ("HUY_BO".equals(existing.getTrangThaiXuLy())) {
+                continue;
+            }
+
+            if (existing.getLoaiSuCo().getId()
+                    .equals(report.getLoaiSuCo().getId())) {
+
+                double distanceMeters =
+                        trungLapBaoCaoService.calculateMatchedDistance(
+                                report,
+                                existing
+                        );
+
+                if (distanceMeters <= 20) {
+                    ownDuplicate = existing;
+                    ownMatchedDistance = distanceMeters;
+                    break;
+                }
+            }
+        }
+
+        if (ownDuplicate != null) {
+
+            AiVerifyResult result =
+                    new AiVerifyResult(
+                            false,
+                            100,
+                            "Báo cáo trùng lặp chính chủ, không được tự ý tăng tin cậy để cộng điểm tích luỹ"
+                    );
+
+            result.setDistance(ownMatchedDistance);
+
+            log.info(
+                    "\n[TRÙNG - CHÍNH CHỦ]"
+                            + "\nUser: {}"
+                            + "\nReport ID: {}"
+                            + "\nLoại sự cố: {}"
+                            + "\nKhoảng cách: {} m"
+                            + "\nĐộ tin cậy report hiện tại: {}"
+                            + "\nĐiểm hiện tại của user: {}\n",
+
+                    maskUid(uid),
+                    ownDuplicate.getId(),
+                    ownDuplicate.getLoaiSuCo().getTen(),
+                    ownMatchedDistance,
+                    ownDuplicate.getDoTinCay(),
+
+                    currentReporter != null
+                            ? currentReporter.getTotalPoints()
+                            : "N/A"
+            );
+
+            return result;
+        }
+
         BaoCaoSuCo existingReport =
                 trungLapBaoCaoService.findDuplicateReport(report);
 
@@ -141,9 +214,6 @@ public class UserBaoCaoService {
 
         String currentUserId = uid;
 
-        User currentReporter =
-                userRepository.findById(uid).orElse(null);
-
         if (existingReport != null) {
 
             System.out.println(
@@ -159,7 +229,7 @@ public class UserBaoCaoService {
                         new AiVerifyResult(
                                 false,
                                 100,
-                                "Bạn đã báo cáo sự cố này trước đó"
+                                "Báo cáo trùng lặp chính chủ, không được tự ý tăng tin cậy để cộng điểm tích luỹ"
                         );
 
                 result.setDistance(matchedDistance);
@@ -417,7 +487,7 @@ public class UserBaoCaoService {
 
         realtimeService.refreshUserHistory(
                 currentUid
-        );
+            );
 
         log.info(
                 "\n[HUY BAO CAO - THÀNH CÔNG]"
@@ -431,6 +501,7 @@ public class UserBaoCaoService {
                 reportId,
                 xuLy,
                 duyet
+                        + "\nXu ly moi: HUY_BO\n"
         );
 
         return ResponseEntity.ok(
@@ -499,6 +570,4 @@ public class UserBaoCaoService {
                 )
         );
     }
-
-   
 }

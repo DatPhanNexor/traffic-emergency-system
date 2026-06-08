@@ -33,23 +33,27 @@ public class TrangThaiController {
     private TrangThaiService trangThaiServiceService;
 
     @GetMapping("/su-co/danh-sach-hien-tai")
-    public List<SuCoMapDto> getSuCoHienTai(
+    public ResponseEntity<?> getSuCoHienTai(
             @RequestParam(required = false) String status,
             HttpSession session) {
 
         TruSo current = (TruSo) session.getAttribute("currentTruSo");
-        if (current == null) return List.of();
+        if (current == null) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Vui lòng đăng nhập tài khoản trụ sở!"));
+        }
 
         List<SuCoMapDto> allActive =
                 repo.findActiveByTruSo(current.getId());
 
         if (status != null && !status.isEmpty()) {
-            return allActive.stream()
+            List<SuCoMapDto> filtered = allActive.stream()
                     .filter(s -> s.getTrangThaiXuLy() != null
                             && s.getTrangThaiXuLy().equalsIgnoreCase(status))
                     .collect(Collectors.toList());
+            return ResponseEntity.ok(filtered);
         }
-        return allActive;
+        return ResponseEntity.ok(allActive);
     }
 
   

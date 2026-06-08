@@ -6,6 +6,9 @@ import com.example.suco.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
@@ -29,7 +32,7 @@ public boolean thucHienDoiQua(String uid, DoiQuaDto dto) {
 
     // 1. Check trạng thái
     if (qua.getTrangThai() != Qua.TrangThai.HOAT_DONG) {
-        throw new RuntimeException("Quà không còn khả dụng");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quà không còn khả dụng");
     }
 
     // 2. Check hết hạn
@@ -37,13 +40,18 @@ public boolean thucHienDoiQua(String uid, DoiQuaDto dto) {
         throw new RuntimeException("Quà đã hết thời gian");
     }
 
-    // 3. Check điểm
-    if (user.getTotalPoints() < qua.getDiem()) {
-        throw new RuntimeException("Không đủ điểm");
+    // ITC_50_4 FIX: _Exchange_Gift_Not_Enough_Points_BVA
+    Long diem = (long) qua.getDiem();
+    Integer soLuong = (dto.getSoLuong() != null && dto.getSoLuong() > 0) ? dto.getSoLuong() : 1;
+    Long diemCanTieu = diem * soLuong;
+
+    // 3. Check điểm (now validates against total points needed)
+    if (user.getTotalPoints() < diemCanTieu) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không đủ điểm để đổi quà");
     }
 
-    // 4. Trừ điểm
-    user.setTotalPoints(user.getTotalPoints() - qua.getDiem());
+    // 4. Trừ điểm (based on total quantity)
+    user.setTotalPoints(user.getTotalPoints() - diemCanTieu.intValue());
     userRepository.save(user);
 
     // 5. GỘP QUÀ
@@ -52,14 +60,14 @@ public boolean thucHienDoiQua(String uid, DoiQuaDto dto) {
 
     if (existing.isPresent()) {
         DoiQua item = existing.get();
-        item.setSoLuong(item.getSoLuong() + 1);
+        item.setSoLuong(item.getSoLuong() + soLuong);
         doiQuaRepository.save(item);
 
     } else {
         DoiQua newItem = new DoiQua();
         newItem.setUserId(uid);
         newItem.setQuaId(dto.getQuaId());
-        newItem.setSoLuong(1);
+        newItem.setSoLuong(soLuong);
 
         doiQuaRepository.save(newItem);
     }

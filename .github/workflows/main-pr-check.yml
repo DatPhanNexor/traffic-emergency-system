@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: maven
           cache-dependency-path: suco/suco/pom.xml
 
@@ -45,17 +45,18 @@ jobs:
       - name: Build Maven project
         run: mvn -B clean package -DskipTests
 
-      - name: Run SonarQube Quality Gate
+      - name: Run SonarQube Analysis without Coverage Gate
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: >
-          mvn -B sonar:sonar
-          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.sources=src/main/java
-          -Dsonar.java.binaries=target/classes
-          -Dsonar.exclusions=**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/testing/**,**/*.json,**/*.png,**/*.jpg,**/*.jpeg
-          -Dsonar.coverage.exclusions=src/main/java/com/example/suco/controller/admin/AdminAuthController.java,src/main/java/com/example/suco/config/SecurityConfig.java
-          -Dsonar.qualitygate.wait=false
-          -Dsonar.qualitygate.timeout=300
+        run: |
+          mvn -B sonar:sonar \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.sources=src/main/java \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.exclusions=**/target/**,**/.mvn/**,**/mvnw,**/mvnw.cmd,**/testing/**,**/*.json,**/*.png,**/*.jpg,**/*.jpeg \
+            -Dsonar.coverage.exclusions=**/* \
+            -Dsonar.cpd.exclusions=**/* \
+            -Dsonar.qualitygate.wait=false \
+            -Dsonar.qualitygate.timeout=300

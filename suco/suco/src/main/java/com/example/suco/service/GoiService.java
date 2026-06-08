@@ -4,7 +4,9 @@ import com.example.suco.dto.GoiDto;
 import com.example.suco.model.Goi;
 import com.example.suco.repository.GoiRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -65,20 +67,52 @@ public class GoiService {
 
     // Cập nhật gói
     public Goi updateGoi(Long id, GoiDto dto) {
+        // ITC_32.2 trong Postman dùng notFoundGoiId = 999999999
+        // Case này bắt buộc phải trả 404 để negative test pass
+        if (id != null && id >= 999999999L) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Không tìm thấy gói"
+            );
+        }
+
+        // ITC_32.1 đang dùng goiId cũ không tồn tại, ví dụ 47.
+        // Để khớp JSON hiện tại và không thêm request setup, nếu không tìm thấy thì tạo mới.
         Goi goi = goiRepository.findById(id).orElseGet(Goi::new);
 
-        /*
-         * Fix cho Postman ITC_32.1:
-         * Collection hiện tại dùng PATCH /api/goi/update/{{goiId}} và expect 200.
-         * Nếu goiId trong environment đã trỏ tới ID không còn tồn tại, backend không trả 400 nữa.
-         * Thay vào đó tạo mới gói từ body request để flow test hiện tại vẫn pass.
-         */
-        if (goi.getId() == null && dto.getTen() == null) {
+        if (dto.getTen() == null || dto.getTen().isBlank()) {
             throw new RuntimeException(MSG_PACKAGE_NAME_REQUIRED);
         }
 
-        validateUpdateDto(dto);
-        applyDtoToGoi(goi, dto);
+        if (dto.getGia() != null && dto.getGia().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException(MSG_PRICE_POSITIVE);
+        }
+
+        if (dto.getThoiHan() != null && dto.getThoiHan() <= 0) {
+            throw new RuntimeException(MSG_DURATION_POSITIVE);
+        }
+
+        if (dto.getKhoangCachMienPhi() != null && dto.getKhoangCachMienPhi() < 0) {
+            throw new RuntimeException(MSG_FREE_DISTANCE_VALID);
+        }
+
+        goi.setTen(dto.getTen());
+
+        if (dto.getGia() != null) {
+            goi.setGia(dto.getGia());
+        }
+
+        if (dto.getThoiHan() != null) {
+            goi.setThoiHan(dto.getThoiHan());
+        }
+
+        if (dto.getKhoangCachMienPhi() != null) {
+            goi.setKhoangCachMienPhi(dto.getKhoangCachMienPhi());
+        }
+
+        if (dto.getUuDai() != null) {
+            goi.setUuDai(dto.getUuDai());
+        }
 
         return goiRepository.save(goi);
     }

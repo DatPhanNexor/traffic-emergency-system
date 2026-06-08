@@ -72,4 +72,13 @@ public class TrangThaiController {
         return ResponseEntity.ok(result);
     }
 
+    // Alias endpoint for Postman Week 3 / SVP-04 API
+    @PatchMapping("/api/map/su-co/cap-nhat-trang-thai/{id}")
+    public ResponseEntity<?> updateSuCoStatusMapApi(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            HttpSession session) {
+        return updateSuCoStatus(id, body, session);
+    }
+
 }

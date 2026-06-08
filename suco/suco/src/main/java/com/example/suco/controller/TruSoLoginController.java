@@ -1,8 +1,12 @@
 package com.example.suco.controller;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,12 +21,8 @@ import com.example.suco.model.TinHieuSOS;
 import com.example.suco.model.TruSo;
 import com.example.suco.repository.TinHieuSOSRepository;
 import com.example.suco.repository.TruSoRepository;
-import java.util.Map;
-import java.util.List;
 
 import jakarta.servlet.http.HttpSession;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 @Controller
 @RequestMapping("/truso")
 public class TruSoLoginController {
@@ -31,6 +31,8 @@ public class TruSoLoginController {
     private final TinHieuSOSRepository tinHieuSOSRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AppConfig appConfig;
+    private static final String MESSAGE = "message";
+
     public TruSoLoginController(TruSoRepository truSoRepository,
                              TinHieuSOSRepository tinHieuSOSRepository,
                              AppConfig appConfig) {
@@ -83,7 +85,7 @@ public ResponseEntity<?> login(@RequestParam String username,
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         return ResponseEntity.ok(Map.of(
-                "message", "Login success",
+                MESSAGE, "Login success",
                 "id", t.getId(),
                 "tenTruSo", t.getTenTruSo(),
                 "tenDangNhap", t.getTenDangNhap()
@@ -92,7 +94,7 @@ public ResponseEntity<?> login(@RequestParam String username,
            
 
     return ResponseEntity.status(401).body(Map.of(
-            "message", "Sai tài khoản hoặc mật khẩu"
+            MESSAGE, "Sai tài khoản hoặc mật khẩu"
     ));
 }
 
@@ -160,7 +162,7 @@ public List<TinHieuSOS> sosCuaToi(HttpSession session) {
 
         if (current == null) {
             return ResponseEntity.status(401).body(Map.of(
-                    "message", "Trụ sở chưa đăng nhập"
+                    MESSAGE, "Trụ sở chưa đăng nhập"
             ));
         }
 

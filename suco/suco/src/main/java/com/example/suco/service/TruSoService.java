@@ -112,15 +112,29 @@ public class TruSoService {
             checkPasswordRules(password);
         }
     }
-
     private void checkPasswordRules(String password) {
         if (password.trim().isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được để trống");
         if (password.length() > 256) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được vượt quá 256 ký tự");
         if (password.length() < 8) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 8 ký tự");
-        if (!password.matches(".*[A-Z].*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ hoa");
-        if (!password.matches(".*[a-z].*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ thường");
-        if (!password.matches(".*\\d.*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 số");
-        if (!password.matches(".*[@$!%*?&].*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
+
+        // FIX SONAR: Kiểm tra thủ công từng ký tự để tránh lỗi ReDoS (Denial of Service)
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+        String specialChars = "@$!%*?&";
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUpper = true;
+            else if (Character.isLowerCase(c)) hasLower = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            else if (specialChars.indexOf(c) != -1) hasSpecial = true;
+        }
+
+        if (!hasUpper) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ hoa");
+        if (!hasLower) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ thường");
+        if (!hasDigit) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 số");
+        if (!hasSpecial) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
     }
 
     private TruSo processUpdate(TruSo truSo, String gh) {

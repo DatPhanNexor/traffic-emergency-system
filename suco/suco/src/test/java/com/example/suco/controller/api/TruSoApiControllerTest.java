@@ -47,8 +47,8 @@ class TruSoApiControllerTest {
     void testCreateTruSo_JsonSuccess() throws Exception {
         // 1. Chuẩn bị DTO đầu vào
         TruSoApiController.TruSoRequest request = new TruSoApiController.TruSoRequest();
-        request.setTenTruSo("Trụ sở Quận 1");
-        request.setTenDangNhap("adminq1");
+        request.setTenTruSo("Trụ sở Quận 2");
+        request.setTenDangNhap("adminq2");
         request.setMatKhau("Admin@123");
         request.setKinhDo(106.0);
         request.setViDo(10.0);
@@ -56,8 +56,8 @@ class TruSoApiControllerTest {
         // 2. Chuẩn bị Entity trả về từ Service
         TruSo savedTruSo = new TruSo();
         savedTruSo.setId(1L);
-        savedTruSo.setTenTruSo("Trụ sở Quận 1");
-        savedTruSo.setTenDangNhap("adminq1");
+        savedTruSo.setTenTruSo("Trụ sở Quận 2");
+        savedTruSo.setTenDangNhap("adminq2");
 
         when(truSoService.saveTruSo(any(TruSo.class))).thenReturn(savedTruSo);
 

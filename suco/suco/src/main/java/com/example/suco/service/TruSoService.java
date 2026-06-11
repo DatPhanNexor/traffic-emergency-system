@@ -70,20 +70,45 @@ public class TruSoService {
             }
         }
 
-        // ================= VALIDATE PASSWORD =================
+        // ================= [FIX B04] VALIDATE PASSWORD CHI TIẾT =================
         String password = truSo.getMatKhau();
-        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$";
 
-        // CHỈ validate khi tạo mới hoặc có nhập mật khẩu mới
+        // CHỈ validate khi tạo mới (id == null) hoặc khi có cập nhật mật khẩu mới
         if (truSo.getId() == null || (password != null && !password.isBlank())) {
             
-            // FIX BUG W4-SVP06-B03: Chặn mật khẩu quá dài
-            if (password != null && password.length() > 256) {
+            // 1. Kiểm tra Trống
+            if (password == null || password.trim().isEmpty()) {
+                throw new RuntimeException("Mật khẩu không được để trống");
+            }
+            
+            // 2. Kiểm tra Độ dài tối đa (B03)
+            if (password.length() > 256) {
                 throw new RuntimeException("Mật khẩu không được vượt quá 256 ký tự");
             }
 
-            if (password == null || !password.matches(regex)) {
-                throw new RuntimeException("Mật khẩu phải >=8 ký tự, gồm hoa, thường, số và ký tự đặc biệt");
+            // 3. Kiểm tra Độ dài tối thiểu
+            if (password.length() < 8) {
+                throw new RuntimeException("Mật khẩu phải có ít nhất 8 ký tự");
+            }
+
+            // 4. Kiểm tra Chữ hoa
+            if (!password.matches(".*[A-Z].*")) {
+                throw new RuntimeException("Mật khẩu phải có ít nhất 1 chữ hoa");
+            }
+
+            // 5. Kiểm tra Chữ thường
+            if (!password.matches(".*[a-z].*")) {
+                throw new RuntimeException("Mật khẩu phải có ít nhất 1 chữ thường");
+            }
+
+            // 6. Kiểm tra Chữ số
+            if (!password.matches(".*\\d.*")) {
+                throw new RuntimeException("Mật khẩu phải có ít nhất 1 số");
+            }
+
+            // 7. Kiểm tra Ký tự đặc biệt
+            if (!password.matches(".*[@$!%*?&].*")) {
+                throw new RuntimeException("Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
             }
         }
 

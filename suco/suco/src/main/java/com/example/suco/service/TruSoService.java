@@ -33,7 +33,20 @@ public class TruSoService {
 
     @Transactional
     public TruSo saveTruSo(TruSo truSo) {
-        // Tự động sinh Geohash
+        
+        // ================= [FIX B05] VALIDATE TỌA ĐỘ =================
+        // Kiểm tra null (Chỉ hoạt động nếu TruSo.java dùng kiểu Double thay vì double)
+        if (truSo.getKinhDo() == null || truSo.getViDo() == null) {
+            throw new RuntimeException("Kinh độ và vĩ độ không được để trống");
+        }
+
+        // Kiểm tra phạm vi tọa độ hợp lệ
+        if (truSo.getViDo() < -90 || truSo.getViDo() > 90 || 
+            truSo.getKinhDo() < -180 || truSo.getKinhDo() > 180) {
+            throw new RuntimeException("Tọa độ không hợp lệ (Vĩ độ: -90 đến 90, Kinh độ: -180 đến 180)");
+        }
+
+        // Sau khi validate tọa độ xong mới tính Geohash để tránh lỗi hệ thống
         String gh = GeoHash.withCharacterPrecision(truSo.getViDo(), truSo.getKinhDo(), 6).toBase32();
         truSo.setGeohash(gh);
 
@@ -47,24 +60,17 @@ public class TruSoService {
 
         // ================= VALIDATE USERNAME =================
         String username = truSo.getTenDangNhap();
-
         if (username == null || username.length() < 5 || username.length() > 20 || username.contains(" ")) {
             throw new RuntimeException("Tên đăng nhập phải 5-20 ký tự, không chứa khoảng trắng");
         }
 
         // CHECK TRÙNG USERNAME
         boolean isDuplicate = truSoRepository.existsByTenDangNhap(username);
-
         if (truSo.getId() == null) {
-            // CREATE
-            if (isDuplicate) {
-                throw new RuntimeException("Tên đăng nhập đã tồn tại");
-            }
+            if (isDuplicate) throw new RuntimeException("Tên đăng nhập đã tồn tại");
         } else {
-            // UPDATE
             TruSo existing = truSoRepository.findById(truSo.getId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy trụ sở"));
-
             if (!existing.getTenDangNhap().equals(username) && isDuplicate) {
                 throw new RuntimeException("Tên đăng nhập đã tồn tại");
             }
@@ -72,46 +78,31 @@ public class TruSoService {
 
         // ================= [FIX B04] VALIDATE PASSWORD CHI TIẾT =================
         String password = truSo.getMatKhau();
-
-        // CHỈ validate khi tạo mới (id == null) hoặc khi có cập nhật mật khẩu mới
         if (truSo.getId() == null || (password != null && !password.isBlank())) {
-            
-            // 1. Kiểm tra Trống
             if (password == null || password.trim().isEmpty()) {
                 throw new RuntimeException("Mật khẩu không được để trống");
             }
-            
-            // 2. Kiểm tra Độ dài tối đa (B03)
             if (password.length() > 256) {
                 throw new RuntimeException("Mật khẩu không được vượt quá 256 ký tự");
             }
-
-            // 3. Kiểm tra Độ dài tối thiểu
             if (password.length() < 8) {
                 throw new RuntimeException("Mật khẩu phải có ít nhất 8 ký tự");
             }
-
-            // 4. Kiểm tra Chữ hoa
             if (!password.matches(".*[A-Z].*")) {
                 throw new RuntimeException("Mật khẩu phải có ít nhất 1 chữ hoa");
             }
-
-            // 5. Kiểm tra Chữ thường
             if (!password.matches(".*[a-z].*")) {
                 throw new RuntimeException("Mật khẩu phải có ít nhất 1 chữ thường");
             }
-
-            // 6. Kiểm tra Chữ số
             if (!password.matches(".*\\d.*")) {
                 throw new RuntimeException("Mật khẩu phải có ít nhất 1 số");
             }
-
-            // 7. Kiểm tra Ký tự đặc biệt
             if (!password.matches(".*[@$!%*?&].*")) {
                 throw new RuntimeException("Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
             }
         }
 
+        // ================= LƯU DỮ LIỆU =================
         TruSo saved;
         if (truSo.getId() != null) {
             saved = truSoRepository.findById(truSo.getId())
@@ -121,7 +112,6 @@ public class TruSoService {
                         existing.setGeohash(gh);
                         if (truSo.getTenTruSo() != null) existing.setTenTruSo(truSo.getTenTruSo().trim());
                         
-                        // Chỉ mã hóa nếu mật khẩu mới KHÁC với mật khẩu đã lưu
                         if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank() 
                             && !truSo.getMatKhau().equals(existing.getMatKhau())) {
                             existing.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
@@ -150,15 +140,12 @@ public class TruSoService {
     public void deleteTruSo(Long id) {
         TruSo ts = truSoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Trụ sở không tồn tại"));
-
         truSoRepository.delete(ts);
         messagingTemplate.convertAndSend("/topic/tru-so-delete", id);
     }
 
     public TruSo timTruSoGanNhat(double userLat, double userLng) {
-        log.info("==================== HỆ THỐNG ĐỊNH VỊ SOS/SỰ CỐ ====================");
-        log.info("[VỊ TRÍ] Tọa độ: {}, {}", userLat, userLng);
-
+        log.info("--- ĐANG TÌM TRỤ SỞ GẦN NHẤT ---");
         List<TruSo> candidates = new ArrayList<>();
         int precision = 6; 
 
@@ -179,15 +166,10 @@ public class TruSoService {
                 }
                 candidates = new ArrayList<>(new HashSet<>(candidates));
             }
-
-            if (candidates.isEmpty()) {
-                precision--; 
-            }
+            if (candidates.isEmpty()) precision--; 
         }
 
-        if (candidates.isEmpty()) {
-            candidates = truSoRepository.findAll();
-        }
+        if (candidates.isEmpty()) candidates = truSoRepository.findAll();
 
         TruSo ganNhat = null;
         double minD = Double.MAX_VALUE;
@@ -199,11 +181,6 @@ public class TruSoService {
                 ganNhat = ts;
             }
         }
-
-        if (ganNhat != null) {
-            log.info("[KẾT QUẢ] TRỤ SỞ TIẾP NHẬN: {} (Cách {} mét)", ganNhat.getTenTruSo(), Math.round(minD * 1000));
-        }
-
         return ganNhat;
     }
 

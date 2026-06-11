@@ -55,49 +55,32 @@ public class AdminTruSoController {
      * METHOD 1: Xử lý MULTIPART_FORM_DATA (Dữ liệu từ giao diện Web)
      * Đã giữ nguyên các dòng Log "Lửa" của bạn nhưng chuyển sang chuẩn Logger
      */
-    @PostMapping(
-        value = "/them",
-        consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+@PostMapping(value = "/them", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
     public ResponseEntity<Object> themTruSoMultipart(@ModelAttribute TruSoRequest request) {
-        
         log.info("🔥 ===== VÀO CONTROLLER /them TRU SO (MULTIPART) =====");
+        // FIX SONAR: Chỉ log thông báo hành động, không log dữ liệu thô từ user
+        log.info("📌 Đang xử lý dữ liệu form-data từ trình duyệt...");
         
-        TruSo truSo = mapToEntity(request);
-        
-        log.info("📌 tenDangNhap: {}", truSo.getTenDangNhap());
-        log.info("📌 tenTruSo: {}", truSo.getTenTruSo());
-        log.info("📌 kinhDo: {}", truSo.getKinhDo());
-        log.info("📌 viDo: {}", truSo.getViDo());
-
+        com.example.suco.model.TruSo truSo = mapToEntity(request);
         truSoService.saveTruSo(truSo);
-
-        log.info("✅ ĐÃ LƯU TRỤ SỞ ID = {}", truSo.getId());
-
+        
+        log.info("✅ ĐÃ LƯU TRỤ SỞ THÀNH CÔNG");
         return buildSuccessResponse(truSo, "Thêm trụ sở thành công!");
     }
 
-    /**
-     * METHOD 2: Xử lý JSON (Dữ liệu từ Mobile App/Postman)
-     * FIX SONAR: Dùng DTO TruSoRequest thay cho Entity trực tiếp
-     */
-    @PostMapping(
-        value = "/them",
-        consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE
-    )
+    @PostMapping(value = "/them", consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<Object> themTruSoJson(@RequestBody TruSoRequest request) {
         log.info("🔥 ===== VÀO CONTROLLER /them TRU SO (JSON) =====");
-        
-        TruSo truSo = mapToEntity(request);
+        log.info("📌 Đang xử lý dữ liệu JSON từ API...");
+
+        com.example.suco.model.TruSo truSo = mapToEntity(request);
         truSoService.saveTruSo(truSo);
         
-        log.info("✅ ĐÃ LƯU TRỤ SỞ ID = {}", truSo.getId());
-        
+        log.info("✅ ĐÃ LƯU TRỤ SỞ QUA API THÀNH CÔNG");
         return buildSuccessResponse(truSo, "Thêm trụ sở thành công (JSON)!");
     }
-
     @DeleteMapping("/delete/{id}")
     @ResponseBody
     public ResponseEntity<String> xoaTruSo(@PathVariable Long id) {

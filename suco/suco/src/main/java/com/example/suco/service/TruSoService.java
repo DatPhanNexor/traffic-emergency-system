@@ -35,24 +35,20 @@ public class TruSoService {
 
     @Transactional
     public TruSo saveTruSo(TruSo truSo) {
-        // 1. Validate tọa độ và sinh Geohash
+        // 1. Validate tọa độ và sinh Geohash (Fix B05)
         validateCoordinates(truSo);
         String gh = GeoHash.withCharacterPrecision(truSo.getViDo(), truSo.getKinhDo(), 6).toBase32();
         truSo.setGeohash(gh);
 
-        // 2. Validate thông tin cơ bản và tên đăng nhập
-        validateStationInfo(truSo);
+        // 2. Validate thông tin cơ bản và Username (Fix Sonar Generic Exception)
+        validateBasicInfo(truSo);
+        validateUsernameUniqueness(truSo);
 
         // 3. Validate mật khẩu chi tiết (Fix B04)
         validatePasswordComplexity(truSo);
 
-        // 4. Xử lý Lưu hoặc Cập nhật
-        TruSo saved;
-        if (truSo.getId() != null) {
-            saved = processUpdate(truSo, gh);
-        } else {
-            saved = processCreate(truSo);
-        }
+        // 4. Lưu dữ liệu (Đã tách hàm để giảm Complexity xuống dưới 15)
+        TruSo saved = finalizeAndSave(truSo, gh);
 
         // 5. Thông báo qua WebSocket
         messagingTemplate.convertAndSend("/topic/tru-so", 
@@ -61,7 +57,18 @@ public class TruSoService {
         return saved;
     }
 
-    // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ĐỂ GIẢM COMPLEXITY ---
+    private TruSo finalizeAndSave(TruSo truSo, String gh) {
+        if (truSo.getId() != null) {
+            return processUpdate(truSo, gh);
+        } 
+        
+        if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank()) {
+            truSo.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
+        }
+        return truSoRepository.save(truSo);
+    }
+
+    // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ĐÃ ĐƯỢC TỐI ƯU ---
 
     private void validateCoordinates(TruSo truSo) {
         if (truSo.getKinhDo() == null || truSo.getViDo() == null) {
@@ -72,14 +79,16 @@ public class TruSoService {
         }
     }
 
-    private void validateStationInfo(TruSo truSo) {
+    private void validateBasicInfo(TruSo truSo) {
         if (truSo.getTenTruSo() == null || truSo.getTenTruSo().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên trụ sở không được để trống");
         }
         if (truSo.getTenTruSo().length() > 255) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên trụ sở không được vượt quá 255 ký tự");
         }
+    }
 
+    private void validateUsernameUniqueness(TruSo truSo) {
         String username = truSo.getTenDangNhap();
         if (username == null || username.length() < 5 || username.length() > 20 || username.contains(" ")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên đăng nhập phải 5-20 ký tự, không chứa khoảng trắng");
@@ -100,28 +109,18 @@ public class TruSoService {
     private void validatePasswordComplexity(TruSo truSo) {
         String password = truSo.getMatKhau();
         if (truSo.getId() == null || (password != null && !password.isBlank())) {
-            if (password == null || password.trim().isEmpty()) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được để trống");
-            if (password.length() > 256) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được vượt quá 256 ký tự");
-            if (password.length() < 8) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 8 ký tự");
-            if (!password.matches(".*[A-Z].*")) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ hoa");
-            if (!password.matches(".*[a-z].*")) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ thường");
-            if (!password.matches(".*\\d.*")) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 số");
-            if (!password.matches(".*[@$!%*?&].*")) 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
+            checkPasswordRules(password);
         }
     }
 
-    private TruSo processCreate(TruSo truSo) {
-        if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank()) {
-            truSo.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
-        }
-        return truSoRepository.save(truSo);
+    private void checkPasswordRules(String password) {
+        if (password.trim().isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được để trống");
+        if (password.length() > 256) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được vượt quá 256 ký tự");
+        if (password.length() < 8) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 8 ký tự");
+        if (!password.matches(".*[A-Z].*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ hoa");
+        if (!password.matches(".*[a-z].*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ thường");
+        if (!password.matches(".*\\d.*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 số");
+        if (!password.matches(".*[@$!%*?&].*")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
     }
 
     private TruSo processUpdate(TruSo truSo, String gh) {
@@ -131,7 +130,6 @@ public class TruSoService {
                     existing.setViDo(truSo.getViDo());
                     existing.setGeohash(gh);
                     if (truSo.getTenTruSo() != null) existing.setTenTruSo(truSo.getTenTruSo().trim());
-                    
                     if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank() 
                         && !truSo.getMatKhau().equals(existing.getMatKhau())) {
                         existing.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));

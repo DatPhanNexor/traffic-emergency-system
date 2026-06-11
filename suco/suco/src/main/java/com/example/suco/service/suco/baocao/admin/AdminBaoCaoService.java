@@ -45,6 +45,14 @@ public class AdminBaoCaoService {
     @Transactional
     public BaoCaoSuCo submitAdminReport(BaoCaoSuCo report, MultipartFile image) {
 
+        // [BUG FIX][SVP-152] Validate loaiSuCo before accessing id to prevent
+        // NullPointerException returning 500 instead of a proper validation error.
+        if (report.getLoaiSuCo() == null || report.getLoaiSuCo().getId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Loại sự cố không được để trống");
+        }
+
         LoaiSuCo loaiSuCo = loaiSuCoRepository.findById(report.getLoaiSuCo().getId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,

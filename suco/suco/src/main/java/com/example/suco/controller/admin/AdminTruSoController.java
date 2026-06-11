@@ -1,5 +1,7 @@
 package com.example.suco.controller.admin;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,8 +22,6 @@ import com.example.suco.repository.TruSoRepository;
 import com.example.suco.service.TruSoService;
 
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin/quan-ly-tru-so")
@@ -77,6 +77,22 @@ public ResponseEntity<?> themTruSo(@ModelAttribute TruSo truSo,
         )
     );
 }
+
+    /**
+     * FIX BUG W4-SVP06-B02: Xử lý APPLICATION_JSON (Dùng cho Postman/Test API)
+     * Sử dụng @RequestBody để ánh xạ JSON body vào đối tượng TruSo
+     */
+    @PostMapping(
+        value = "/them",
+        consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE
+    )
+    @ResponseBody
+    public ResponseEntity<?> themTruSoJson(@RequestBody TruSo truSo) {
+        System.out.println("🔥 [JSON] Đang thêm trụ sở qua API: " + truSo.getTenTruSo());
+        truSoService.saveTruSo(truSo);
+        return buildSuccessResponse(truSo, "Thêm trụ sở thành công (JSON)!");
+    }
+
 @DeleteMapping("/delete/{id}")
 @ResponseBody
 public ResponseEntity<String> xoaTruSo(@PathVariable Long id) {
@@ -115,4 +131,20 @@ public ResponseEntity<String> xoaTruSo(@PathVariable Long id) {
             return ResponseEntity.status(500).body("Lỗi: " + e.getMessage());
         }
     }
+    // Hàm phụ trợ tạo Response JSON cho Mobile App
+    private ResponseEntity<Object> buildSuccessResponse(com.example.suco.model.TruSo truSo, String message) {
+        return ResponseEntity.ok(
+            java.util.Map.of(
+                "message", message,
+                "id", truSo.getId(),
+                "tenDangNhap", truSo.getTenDangNhap(),
+                "tenTruSo", truSo.getTenTruSo(),
+                "kinhDo", truSo.getKinhDo(),
+                "viDo", truSo.getViDo(),
+                "geohash", truSo.getGeohash() != null ? truSo.getGeohash() : ""
+            )
+        );
+    }
 }
+
+//

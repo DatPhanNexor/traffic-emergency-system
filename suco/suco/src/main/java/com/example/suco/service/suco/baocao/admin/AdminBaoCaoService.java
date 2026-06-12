@@ -43,7 +43,7 @@ public class AdminBaoCaoService {
     private SuCoMapper suCoMapper;
 
     @Transactional
-    public BaoCaoSuCo submitAdminReport(BaoCaoSuCo report, MultipartFile image) {
+    public BaoCaoSuCo submitAdminReport(BaoCaoSuCo report, MultipartFile image, String adminUid) {
 
         // [BUG FIX][SVP-152] Validate loaiSuCo before accessing id to prevent
         // NullPointerException returning 500 instead of a proper validation error.
@@ -55,13 +55,15 @@ public class AdminBaoCaoService {
 
         LoaiSuCo loaiSuCo = loaiSuCoRepository.findById(report.getLoaiSuCo().getId())
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
+                        HttpStatus.BAD_REQUEST,
                         "Loại sự cố không tồn tại"));
 
         report.setLoaiSuCo(loaiSuCo);
 
-        User adminUser = userRepository.findById("ADMIN_SYSTEM")
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy ADMIN_SYSTEM"));
+        User adminUser = userRepository.findById(adminUid)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Không tìm thấy tài khoản admin: " + adminUid));
 
         report.setReporter(adminUser);
         report.setNguonBaoCao("ADMIN");

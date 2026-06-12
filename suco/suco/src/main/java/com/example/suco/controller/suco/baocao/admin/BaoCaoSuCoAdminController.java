@@ -86,10 +86,12 @@ public class BaoCaoSuCoAdminController {
     @ResponseBody
     public ResponseEntity<?> adminSubmit(
         @ModelAttribute BaoCaoSuCo report,
-        @RequestParam(value = "image", required = false) MultipartFile image
+        @RequestParam(value = "image", required = false) MultipartFile image,
+        org.springframework.security.core.Authentication authentication
     ) {
         try {
-            BaoCaoSuCo saved = adminBaoCaoService.submitAdminReport(report, image);
+            String adminUid = (authentication != null) ? authentication.getName() : "ADMIN_SYSTEM";
+            BaoCaoSuCo saved = adminBaoCaoService.submitAdminReport(report, image, adminUid);
             // Trả về JSON cho trình duyệt xử lý
             return ResponseEntity.ok(saved);
         } catch (ResponseStatusException ex) {

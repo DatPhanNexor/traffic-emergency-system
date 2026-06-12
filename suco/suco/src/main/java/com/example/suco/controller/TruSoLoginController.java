@@ -49,10 +49,30 @@ public class TruSoLoginController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> login(@RequestParam String username,
-                                   @RequestParam String password,
+    public ResponseEntity<?> login(@RequestParam(required = false) String username,
+                                   @RequestParam(required = false) String password,
                                    HttpSession session) {
 
+        // --- ĐOẠN KIỂM TRA ĐẦU VÀO (VALIDATION) ---
+        // Kiểm tra username null hoặc chỉ chứa khoảng trắng
+        if (username == null || username.trim().isEmpty()) {
+            session.invalidate();
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.status(400).body(Map.of(
+                    MESSAGE, "Tên đăng nhập không được để trống"
+            ));
+        }
+
+        // Kiểm tra password null hoặc chỉ chứa khoảng trắng
+        if (password == null || password.trim().isEmpty()) {
+            session.invalidate();
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.status(400).body(Map.of(
+                    MESSAGE, "Mật khẩu không được để trống"
+            ));
+        }
+
+        // Chỉ kiểm tra DB sau khi dữ liệu đầu vào đã hợp lệ
         Optional<TruSo> truSo = truSoRepository.findByTenDangNhap(username);
 
         if (truSo.isPresent() && passwordEncoder.matches(password, truSo.get().getMatKhau())) {
@@ -75,10 +95,8 @@ public class TruSoLoginController {
             ));
         }
 
-        // --- ĐOẠN CẦN SỬA ---
-        // Hủy session hiện tại và xóa toàn bộ dữ liệu đăng nhập cũ (nếu có)
+        // Hủy session hiện tại và xóa toàn bộ dữ liệu đăng nhập cũ nếu thông tin sai
         session.invalidate();
-        // Clear thông tin chứng thực trong Spring Security Context
         SecurityContextHolder.clearContext();
 
         return ResponseEntity.status(401).body(Map.of(

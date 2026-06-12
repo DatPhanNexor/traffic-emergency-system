@@ -37,12 +37,27 @@
         log.info("\nMô tả: {}", quaDto.getMoTa());
         log.info("\nNgày kết thúc: {}", quaDto.getNgayKetThuc());
 
+        // ITC_47.4: Kiểm tra tên không rỗng
+        if (quaDto.getTen() == null || quaDto.getTen().isBlank()) {
+            log.error("ADD QUÀ FAILED - Xảy ra lỗi do tham số tên quà bị bỏ trống");
+            throw new IllegalArgumentException("Tên quà không được để trống");
+        }
+
+        // ITC_47.4: Kiểm tra tên không trùng lặp
+        if (quaRepository.existsByTenIgnoreCase(quaDto.getTen().trim())) {
+            log.error("ADD QUÀ FAILED - Xảy ra lỗi trùng lặp tên quà trong cơ sở dữ liệu");
+            throw new IllegalArgumentException("Tên quà đã tồn tại");
+        }
+
+        // Kiểm tra điểm không rỗng
         if (quaDto.getDiem() == null) {
-            log.error("ADD QUÀ FAILED - diem NULL | dto={}", quaDto);
+            log.error("ADD QUÀ FAILED - Xảy ra lỗi do tham số điểm đổi quà bị bỏ trống");
             throw new IllegalArgumentException("Điểm đổi quà không được để trống");
         }
+
+        // Kiểm tra điểm phải lớn hơn 0
         if (quaDto.getDiem() <= 0) {
-            log.error("ADD QUÀ FAILED - diem Không hợp lệ | dto={}", quaDto);
+            log.error("ADD QUÀ FAILED - Xảy ra lỗi do điểm đổi quà nhỏ hơn hoặc bằng 0");
             throw new IllegalArgumentException("Điểm đổi quà phải lớn hơn 0");
         }
 

@@ -44,61 +44,91 @@ public class IncidentApiController {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody Map<String, Object> payload
     ) {
-        Double viDo = getDouble(payload, "viDo", "lat", "latitude");
-        Double kinhDo = getDouble(payload, "kinhDo", "lng", "longitude");
-        String hinhAnhUrl = getString(payload, "hinhAnhUrl", "imageUrl", "image", "hinhAnh", "photo", "base64");
-        Long loaiId = getLong(payload, "loaiSuCoId", "loaiId", "typeId", "categoryId", "loaiSuCo");
-        String loaiTen = getString(payload, "loaiSuCoTen", "loaiTen", "type", "category");
-        Object loaiObj = payload != null ? payload.get("loaiSuCo") : null;
+        try {
+            Double viDo = getDouble(payload, "viDo", "lat", "latitude");
+            Double kinhDo = getDouble(payload, "kinhDo", "lng", "longitude");
+            String hinhAnhUrl = getString(payload, "hinhAnhUrl", "imageUrl", "image", "hinhAnh", "photo", "base64");
+            Long loaiId = getLong(payload, "loaiSuCoId", "loaiId", "typeId", "categoryId", "loaiSuCo");
+            String loaiTen = getString(payload, "loaiSuCoTen", "loaiTen", "type", "category");
+            Object loaiObj = payload != null ? payload.get("loaiSuCo") : null;
 
-        if (loaiObj instanceof Map<?, ?> loaiMap) {
-            if (loaiId == null) {
-                loaiId = getLongFromMap(loaiMap, "id", "loaiId", "typeId");
+            if (loaiObj instanceof Map<?, ?> loaiMap) {
+                if (loaiId == null) {
+                    loaiId = getLongFromMap(loaiMap, "id", "loaiId", "typeId");
+                }
+                if (loaiTen == null) {
+                    loaiTen = getStringFromMap(loaiMap, "ten", "name", "type");
+                }
             }
-            if (loaiTen == null) {
-                loaiTen = getStringFromMap(loaiMap, "ten", "name", "type");
-            }
-        }
 
-        LoaiSuCo loaiSuCo = null;
-        if (loaiId != null) {
-            loaiSuCo = loaiSuCoRepository.findById(loaiId).orElse(null);
-        }
-        if (loaiSuCo == null && loaiTen != null) {
-            loaiSuCo = loaiSuCoRepository.findByTen(loaiTen).orElse(null);
-        }
-
-        if (loaiSuCo == null) {
-            LoaiSuCo created = new LoaiSuCo();
+            LoaiSuCo loaiSuCo = null;
             if (loaiId != null) {
-                created.setId(loaiId);
+                loaiSuCo = loaiSuCoRepository.findById(loaiId).orElse(null);
             }
-            created.setTen(loaiTen != null ? loaiTen : "Loai su co mac dinh");
-            created.setIconUrl("");
-            loaiSuCo = loaiSuCoRepository.save(created);
+            if (loaiSuCo == null && loaiTen != null) {
+                loaiSuCo = loaiSuCoRepository.findByTen(loaiTen).orElse(null);
+            }
+
+            if (loaiSuCo == null) {
+                LoaiSuCo created = new LoaiSuCo();
+                if (loaiId != null) {
+                    created.setId(loaiId);
+                }
+                created.setTen(loaiTen != null ? loaiTen : "Loai su co mac dinh");
+                created.setIconUrl("");
+                loaiSuCo = loaiSuCoRepository.save(created);
+            }
+
+            String uid = resolveUid(authHeader);
+
+            User user = userRepository.findById(uid)
+                    .orElseGet(() -> createTestUser(uid));
+
+            BaoCaoSuCo report = new BaoCaoSuCo();
+            report.setReporter(user);
+            report.setLoaiSuCo(loaiSuCo);
+            report.setViDo(viDo != null ? viDo : 0.0);
+            report.setKinhDo(kinhDo != null ? kinhDo : 0.0);
+            report.setMoTa(getString(payload, "moTa", "description", "note"));
+            report.setHinhAnhUrl(hinhAnhUrl != null ? hinhAnhUrl : "mock-image");
+
+            AiVerifyResult ai =
+                    userBaoCaoService.submitReport(uid, report, null);
+
+            if (!ai.isValid()) {
+                String code = ai.getReason() != null
+                        && ai.getReason().contains("trước đó")
+                        ? "DUPLICATE"
+                        : "AI_REJECTED";
+
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new AiRejectResponse(
+                                code,
+                                ai.getReason(),
+                                ai.getConfidence() != null ? ai.getConfidence() : 0,
+                                ai.getDistance()
+                        )
+                );
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    new AiRejectResponse(
+                            "AI_APPROVED",
+                            "Báo cáo sự cố thành công",
+                            100,
+                            ai.getDistance()
+                    )
+            );
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    new AiRejectResponse(
+                            "UNAUTHORIZED",
+                            "Lỗi xác thực: " + e.getMessage(),
+                            0,
+                            null
+                    )
+            );
         }
-
-        User user = userRepository.findById("test-user")
-                .orElseGet(() -> createTestUser("test-user"));
-
-        BaoCaoSuCo report = new BaoCaoSuCo();
-        report.setReporter(user);
-        report.setLoaiSuCo(loaiSuCo);
-        report.setViDo(viDo != null ? viDo : 0.0);
-        report.setKinhDo(kinhDo != null ? kinhDo : 0.0);
-        report.setMoTa(getString(payload, "moTa", "description", "note"));
-        report.setHinhAnhUrl(hinhAnhUrl != null ? hinhAnhUrl : "mock-image");
-
-        reportRepository.save(report);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                new AiRejectResponse(
-                        "AI_APPROVED",
-                        "Báo cáo sự cố thành công",
-                        100,
-                        null
-                )
-        );
     }
 
     @GetMapping

@@ -27,11 +27,8 @@ protected void doFilterInternal(HttpServletRequest request,
                                 FilterChain filterChain)
         throws ServletException, IOException {
 
-                String contentType = request.getContentType();
-    if (contentType != null && contentType.startsWith("multipart/")) {
-        filterChain.doFilter(request, response);
-        return;
-    }
+    // FIX: Vẫn extract token từ Header/Cookie ngay cả khi là multipart request
+    // Chỉ bỏ qua việc read body cho multipart
     String token = resolveToken(request);
 
     if (token == null || token.isBlank()) {

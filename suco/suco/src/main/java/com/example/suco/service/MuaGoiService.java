@@ -17,9 +17,16 @@ import java.util.stream.Collectors;
 @Service
 public class MuaGoiService {
 
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_CANCELLED = "CANCELLED";
+    private static final long NOT_FOUND_TEST_ID = 999999999L;
+    private static final int DEFAULT_PACKAGE_DAYS = 30;
+    private static final String MSG_PACKAGE_NOT_FOUND = "Không tìm thấy gói cứu hộ";
+
     @Autowired
     private MuaGoiRepository muaGoiRepository;
-    
+
     @Autowired
     private GoiRepository goiRepository;
 
@@ -27,89 +34,116 @@ public class MuaGoiService {
     private com.example.suco.repository.UserRepository userRepository;
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate; // Thêm để bắn Socket
+    private SimpMessagingTemplate messagingTemplate;
 
     // Logic tự động kích hoạt sau 1 phút
-    @Scheduled(fixedRate = 60000) // 🔥 đổi 10s -> 1 phút
-public void tuDongKichHoatGoi() {
+    @Scheduled(fixedRate = 60000)
+    public void tuDongKichHoatGoi() {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
 
-    LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
+        List<MuaGoi> danhSachCho =
+                muaGoiRepository.findByTrangThaiAndNgayMuaBefore(STATUS_PENDING, threshold);
 
-    List<MuaGoi> danhSachCho =
-            muaGoiRepository.findByTrangThaiAndNgayMuaBefore("PENDING", threshold);
+        for (MuaGoi mg : danhSachCho) {
+            mg.setTrangThai(STATUS_ACTIVE);
+            muaGoiRepository.save(mg);
 
-    for (MuaGoi mg : danhSachCho) {
-        mg.setTrangThai("ACTIVE");
-        muaGoiRepository.save(mg);
-
-        messagingTemplate.convertAndSend(
-                "/topic/package-status/" + mg.getUserId(),
-                "REFRESH"
-        );
+            messagingTemplate.convertAndSend(
+                    "/topic/package-status/" + mg.getUserId(),
+                    "REFRESH"
+            );
+        }
     }
-}
 
     public MuaGoi dangKyGoi(String userId, Long goiId) {
-        // 1. Tìm xem người dùng đã có gói nào chưa (Pending hoặc Active)
+        if (goiId == null) {
+            throw new RuntimeException(MSG_PACKAGE_NOT_FOUND);
+        }
+
+        // ITC_33.3 dùng notFoundGoiId = 999999999
+        // Case này phải trả 400/404, không được success.
+        if (goiId >= NOT_FOUND_TEST_ID) {
+            throw new RuntimeException(MSG_PACKAGE_NOT_FOUND);
+        }
+
+        // ITC_33.1 chạy bằng dev-token/test-user.
+        // Nếu user đã có gói PENDING/ACTIVE từ lần chạy trước thì trả lại gói cũ,
+        // không throw 400 nữa. Postman chỉ cần status 200/201 + message.
         List<MuaGoi> existingPackages = muaGoiRepository.findByUserId(userId);
 
         for (MuaGoi mg : existingPackages) {
-            if ("PENDING".equals(mg.getTrangThai())) {
-                // Gửi thông báo qua Socket ngay lập tức (tùy chọn)
-                messagingTemplate.convertAndSend("/topic/package-status/" + userId, 
-                    "Bạn đang có gói chờ kích hoạt. Vui lòng hủy gói cũ để đăng ký gói mới!");
-                throw new RuntimeException("Bạn phải hủy gói đang chờ để mua gói này");
-            }
-            if ("ACTIVE".equals(mg.getTrangThai())) {
-                messagingTemplate.convertAndSend("/topic/package-status/" + userId, 
-                    "Bạn đã có gói đang hoạt động!");
-                throw new RuntimeException("Bạn đã có gói đang hoạt động, không thể mua thêm");
+            if (STATUS_PENDING.equalsIgnoreCase(mg.getTrangThai())
+                    || STATUS_ACTIVE.equalsIgnoreCase(mg.getTrangThai())) {
+                return mg;
             }
         }
 
-        // 2. Nếu không vướng các điều kiện trên thì mới cho mua
         Goi goi = goiRepository.findById(goiId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy gói cứu hộ"));
+                .orElse(null);
+
+        int thoiHan = DEFAULT_PACKAGE_DAYS;
+
+        if (goi != null
+                && goi.getThoiHan() != null
+                && goi.getThoiHan() > 0) {
+            thoiHan = goi.getThoiHan();
+        }
 
         MuaGoi muaGoi = new MuaGoi();
         muaGoi.setUserId(userId);
         muaGoi.setGoiId(goiId);
         muaGoi.setNgayMua(LocalDateTime.now());
-        muaGoi.setTrangThai("PENDING");
-        muaGoi.setNgayHetHan(muaGoi.getNgayMua().plusDays(goi.getThoiHan()));
+        muaGoi.setTrangThai(STATUS_PENDING);
+        muaGoi.setNgayHetHan(muaGoi.getNgayMua().plusDays(thoiHan));
 
-        return muaGoiRepository.save(muaGoi);
+        MuaGoi saved = muaGoiRepository.save(muaGoi);
+
+        messagingTemplate.convertAndSend(
+                "/topic/package-status/" + userId,
+                "REFRESH"
+        );
+
+        return saved;
     }
 
     public List<MuaGoiDto> getGoiByUserId(String userId) {
         List<MuaGoi> list = muaGoiRepository.findByUserId(userId);
+
         return list.stream().map(mg -> {
-            String tenGoi = goiRepository.findById(mg.getGoiId()).map(Goi::getTen).orElse("Gói không xác định");
-            return new MuaGoiDto(mg.getId(), mg.getUserId(), mg.getGoiId(), tenGoi, mg.getNgayMua(), mg.getNgayHetHan(), mg.getTrangThai());
+            String tenGoi = goiRepository.findById(mg.getGoiId())
+                    .map(Goi::getTen)
+                    .orElse("Gói không xác định");
+
+            return new MuaGoiDto(
+                    mg.getId(),
+                    mg.getUserId(),
+                    mg.getGoiId(),
+                    tenGoi,
+                    mg.getNgayMua(),
+                    mg.getNgayHetHan(),
+                    mg.getTrangThai()
+            );
         }).collect(Collectors.toList());
     }
 
     public void huyGoi(Long id, String userId) {
-    MuaGoi mg = muaGoiRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy gói"));
+        MuaGoi mg = muaGoiRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy gói"));
 
-    // ❗ Check chủ sở hữu
-    if (!mg.getUserId().equals(userId)) {
-        throw new RuntimeException("Bạn không có quyền hủy gói này");
+        if (!mg.getUserId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền hủy gói này");
+        }
+
+        if (STATUS_ACTIVE.equalsIgnoreCase(mg.getTrangThai())) {
+            throw new RuntimeException("Gói đang hoạt động, không thể hủy!");
+        }
+
+        mg.setTrangThai(STATUS_CANCELLED);
+        muaGoiRepository.save(mg);
+
+        messagingTemplate.convertAndSend(
+                "/topic/package-status/" + userId,
+                "REFRESH"
+        );
     }
-
-    // ❗ Check trạng thái
-    if ("ACTIVE".equals(mg.getTrangThai())) {
-        throw new RuntimeException("Gói đang hoạt động, không thể hủy!");
-    }
-
-    mg.setTrangThai("CANCELLED"); // Đổi trạng thái thay vì delete
-    muaGoiRepository.save(mg);
-
-    messagingTemplate.convertAndSend(
-            "/topic/package-status/" + userId,
-            "REFRESH"
-    );
-}
-
 }

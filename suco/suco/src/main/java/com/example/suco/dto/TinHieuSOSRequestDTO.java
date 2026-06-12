@@ -6,6 +6,8 @@ public class TinHieuSOSRequestDTO {
     private String ghiAmBase64;
     private String hinhAnhBase64;
     private String ghiChu;
+    private String moTa;
+    private String loaiSuCo;
     private String thoiGianTao;
     private String diaChi; // Thêm trường
 
@@ -27,9 +29,15 @@ public class TinHieuSOSRequestDTO {
     public String getGhiChu() { return ghiChu; }
     public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
 
+    public String getMoTa() { return moTa; }
+    public void setMoTa(String moTa) { this.moTa = moTa; }
+
+    public String getLoaiSuCo() { return loaiSuCo; }
+    public void setLoaiSuCo(String loaiSuCo) { this.loaiSuCo = loaiSuCo; }
+
     public String getThoiGianTao() { return thoiGianTao; }
     public void setThoiGianTao(String thoiGianTao) { this.thoiGianTao = thoiGianTao; }
 
-public String getDiaChi() { return diaChi; } // Thêm Getter
-public void setDiaChi(String diaChi) { this.diaChi = diaChi; } // Thêm Setter
+    public String getDiaChi() { return diaChi; }
+    public void setDiaChi(String diaChi) { this.diaChi = diaChi; }
 }

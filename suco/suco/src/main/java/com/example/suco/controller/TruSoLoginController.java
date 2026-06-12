@@ -49,7 +49,7 @@ public class TruSoLoginController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> login(@RequestParam(required = false) String username,
+    public ResponseEntity<Map<String, Object>> login(@RequestParam(required = false) String username,
                                    @RequestParam(required = false) String password,
                                    HttpSession session) {
 

@@ -2,6 +2,7 @@ package com.example.suco.controller.suco.baocao.admin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.suco.service.suco.baocao.admin.AdminBaoCaoService;
 import com.example.suco.service.suco.baocao.admin.DuyetSuCoService;
@@ -82,15 +84,22 @@ public class BaoCaoSuCoAdminController {
 
     @PostMapping(value = "/admin-submit", consumes = "multipart/form-data")
     @ResponseBody
-    public ResponseEntity<BaoCaoSuCo> adminSubmit( // Đổi String thành BaoCaoSuCo
+    public ResponseEntity<?> adminSubmit(
         @ModelAttribute BaoCaoSuCo report,
-        @RequestParam("image") MultipartFile image
+        @RequestParam(value = "image", required = false) MultipartFile image,
+        org.springframework.security.core.Authentication authentication
     ) {
-        //BaoCaoSuCo saved = reportService.submitAdminReport(report, image);
-        BaoCaoSuCo saved = adminBaoCaoService.submitAdminReport(report, image);
-    
-        // Trả về JSON cho trình duyệt xử lý
-        return ResponseEntity.ok(saved); 
+        try {
+            String adminUid = (authentication != null) ? authentication.getName() : "ADMIN_SYSTEM";
+            BaoCaoSuCo saved = adminBaoCaoService.submitAdminReport(report, image, adminUid);
+            // Trả về JSON cho trình duyệt xử lý
+            return ResponseEntity.ok(saved);
+        } catch (ResponseStatusException ex) {
+            // [BUG FIX][SVP-152] Trả về JSON lỗi đúng HTTP status thay vì để
+            // Spring tự xử lý thành 500 hoặc trang HTML lỗi mặc định.
+            return ResponseEntity.status(ex.getStatusCode())
+                    .body(Map.of("message", ex.getReason()));
+        }
     }
 
 

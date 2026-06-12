@@ -1,6 +1,11 @@
 package com.example.suco.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "truso")
@@ -18,8 +23,8 @@ public class TruSo {
     private String tenTruSo;
 
     // Vị trí hoạt động
-    private double kinhDo; 
-    private double viDo;   
+    private Double kinhDo; 
+    private Double viDo;   
 
 @Column(length = 12)
 private String geohash;
@@ -35,12 +40,12 @@ private String geohash;
     public void setMatKhau(String matKhau) { this.matKhau = matKhau; }
     public String getTenTruSo() { return tenTruSo; }
     public void setTenTruSo(String tenTruSo) { this.tenTruSo = tenTruSo; }
-    public double getKinhDo() { return kinhDo; }
-    public void setKinhDo(double kinhDo) { this.kinhDo = kinhDo; }
-    public double getViDo() { return viDo; }
+    public Double getKinhDo() { return kinhDo; }
+    public void setKinhDo(Double kinhDo) { this.kinhDo = kinhDo; }
+    public Double getViDo() { return viDo; }
     
-    public void setViDo(double viDo) { this.viDo = viDo; }
+    public void setViDo(Double viDo) { this.viDo = viDo; }
     public String getGeohash() { return geohash; }
 public void setGeohash(String geohash) { this.geohash = geohash; }
 
-}
+}//

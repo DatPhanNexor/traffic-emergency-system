@@ -75,7 +75,12 @@ public class TruSoLoginController {
             ));
         }
 
-        // Thay đổi thông báo lỗi tại đây để đồng nhất với test case
+        // --- ĐOẠN CẦN SỬA ---
+        // Hủy session hiện tại và xóa toàn bộ dữ liệu đăng nhập cũ (nếu có)
+        session.invalidate();
+        // Clear thông tin chứng thực trong Spring Security Context
+        SecurityContextHolder.clearContext();
+
         return ResponseEntity.status(401).body(Map.of(
                 MESSAGE, "Tài khoản hoặc mật khẩu không đúng!"
         ));

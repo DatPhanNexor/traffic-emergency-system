@@ -37,6 +37,13 @@ public ResponseEntity<Object> getAllUsersForTest() {
     @PostMapping("/sync")
 public ResponseEntity<Object> sync(@RequestBody AuthRequest request) {
     try {
+        if (request == null || request.getToken() == null || request.getToken().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "MISSING_TOKEN",
+                    "message", "Thiếu token"
+            ));
+        }
+
         String uid;
         String email;
         String name;
@@ -44,10 +51,10 @@ public ResponseEntity<Object> sync(@RequestBody AuthRequest request) {
         // --- CƠ CHẾ BYPASS ĐỂ TEST BẰNG POSTMAN ---
         if ("dev-token".equals(request.getToken())) {
             // fake token dùng cho Postman, sẽ tạo user tạm thời với thông tin cứng
-    uid = "test-user";
-    email = "test@gmail.com";
-    name = "Test User";
-} else {
+            uid = "test-user-w4";
+            email = "test@gmail.com";
+            name = "Test User";
+        } else {
             // Luồng thật dùng cho App Android
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getToken());
             uid = decodedToken.getUid();

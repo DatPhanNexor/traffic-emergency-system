@@ -14,7 +14,8 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-
+    private static final String ERROR_KEY = "error";
+    private static final String MESSAGE_KEY = "message";
 
     private final UserRepository userRepository;
     private final UserService userService; // 1. Thêm UserService vào đây
@@ -39,8 +40,8 @@ public ResponseEntity<Object> sync(@RequestBody AuthRequest request) {
     try {
         if (request == null || request.getToken() == null || request.getToken().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", "MISSING_TOKEN",
-                    "message", "Thiếu token"
+                    ERROR_KEY, "MISSING_TOKEN",
+                    MESSAGE_KEY, "Thiếu token"
             ));
         }
 
@@ -87,7 +88,7 @@ public ResponseEntity<Object> getMyInfo(@RequestHeader("Authorization") String a
     try {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body(
-                Map.of("error", "MISSING_TOKEN", "message", "Thiếu token")
+                Map.of(ERROR_KEY, "MISSING_TOKEN", MESSAGE_KEY, "Thiếu token")
             );
         }
 
@@ -99,7 +100,7 @@ FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
 
         if (user == null) {
             return ResponseEntity.status(404).body(
-                Map.of("error", "USER_NOT_FOUND", "message", "Không tìm thấy user")
+                Map.of(ERROR_KEY, "USER_NOT_FOUND", MESSAGE_KEY, "Không tìm thấy user")
             );
         }
 
@@ -107,7 +108,7 @@ FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
 
     } catch (Exception e) {
         return ResponseEntity.status(401).body(
-            Map.of("error", "INVALID_TOKEN", "message", e.getMessage())
+            Map.of(ERROR_KEY, "INVALID_TOKEN", MESSAGE_KEY, e.getMessage())
         );
     }
 }
@@ -116,16 +117,16 @@ FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
     public ResponseEntity<Object> getUserByUid(@PathVariable String uid) {
         if (!isValidUid(uid)) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_UID",
-                    "message", "Uid không hợp lệ."
+                    ERROR_KEY, "INVALID_UID",
+                    MESSAGE_KEY, "Uid không hợp lệ."
             ));
         }
 
         User user = userService.getUserInfo(uid);
         if (user == null) {
             return ResponseEntity.status(404).body(Map.of(
-                    "error", "USER_NOT_FOUND",
-                    "message", "Không tìm thấy user với uid: " + uid
+                    ERROR_KEY, "USER_NOT_FOUND",
+                    MESSAGE_KEY, "Không tìm thấy user với uid: " + uid
             ));
         }
 

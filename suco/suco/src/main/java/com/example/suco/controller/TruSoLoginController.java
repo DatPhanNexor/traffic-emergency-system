@@ -23,6 +23,7 @@ import com.example.suco.repository.TinHieuSOSRepository;
 import com.example.suco.repository.TruSoRepository;
 
 import jakarta.servlet.http.HttpSession;
+
 @Controller
 @RequestMapping("/truso")
 public class TruSoLoginController {
@@ -34,81 +35,87 @@ public class TruSoLoginController {
     private static final String MESSAGE = "message";
 
     public TruSoLoginController(TruSoRepository truSoRepository,
-                             TinHieuSOSRepository tinHieuSOSRepository,
-                             AppConfig appConfig) {
-    this.truSoRepository = truSoRepository;
-    this.tinHieuSOSRepository = tinHieuSOSRepository;
-    this.appConfig = appConfig;
-}
+                                TinHieuSOSRepository tinHieuSOSRepository,
+                                AppConfig appConfig) {
+        this.truSoRepository = truSoRepository;
+        this.tinHieuSOSRepository = tinHieuSOSRepository;
+        this.appConfig = appConfig;
+    }
 
     @GetMapping("/login")
-public String trangLogin() {
-    return "truso/login";
-}
-
-
-    // @PostMapping("/login")
-    // public String xuLyLogin(@RequestParam String username, 
-    //                         @RequestParam String password, 
-    //                         HttpSession session, 
-    //                         Model model) {
-    //     Optional<TruSo> truSo = truSoRepository.findByTenDangNhap(username);
-    //     if (truSo.isPresent() && passwordEncoder.matches(password, truSo.get().getMatKhau())) {
-    //         // Lưu vào session để dùng ở trang chủ và chặn truy cập trái phép
-    //         session.setAttribute("currentTruSo", truSo.get());
-    //         return "redirect:/truso/trang-chu";
-    //     }
-    //     model.addAttribute("error", "Tài khoản hoặc mật khẩu không đúng!");
-    //     return "truso/login";
-    // }
+    public String trangLogin() {
+        return "truso/login";
+    }
 
     @PostMapping("/login")
-@ResponseBody
-public ResponseEntity<?> login(@RequestParam String username,
-                               @RequestParam String password,
-                               HttpSession session) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> login(@RequestParam(required = false) String username,
+                                   @RequestParam(required = false) String password,
+                                   HttpSession session) {
 
-    Optional<TruSo> truSo = truSoRepository.findByTenDangNhap(username);
+        // --- ĐOẠN KIỂM TRA ĐẦU VÀO (VALIDATION) ---
+        // Kiểm tra username null hoặc chỉ chứa khoảng trắng
+        if (username == null || username.trim().isEmpty()) {
+            session.invalidate();
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.status(400).body(Map.of(
+                    MESSAGE, "Tên đăng nhập không được để trống"
+            ));
+        }
 
-    if (truSo.isPresent() && passwordEncoder.matches(password, truSo.get().getMatKhau())) {
+        // Kiểm tra password null hoặc chỉ chứa khoảng trắng
+        if (password == null || password.trim().isEmpty()) {
+            session.invalidate();
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.status(400).body(Map.of(
+                    MESSAGE, "Mật khẩu không được để trống"
+            ));
+        }
 
-        session.setAttribute("currentTruSo", truSo.get());
+        // Chỉ kiểm tra DB sau khi dữ liệu đầu vào đã hợp lệ
+        Optional<TruSo> truSo = truSoRepository.findByTenDangNhap(username);
 
-        TruSo t = truSo.get();
-         session.setAttribute("currentTruSo", t);
+        if (truSo.isPresent() && passwordEncoder.matches(password, truSo.get().getMatKhau())) {
 
-    var auth = new UsernamePasswordAuthenticationToken(
-                t, // principal
-                null,
-                List.of() // nếu chưa dùng role
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
+            TruSo t = truSo.get();
+            session.setAttribute("currentTruSo", t);
 
-        return ResponseEntity.ok(Map.of(
-                MESSAGE, "Login success",
-                "id", t.getId(),
-                "tenTruSo", t.getTenTruSo(),
-                "tenDangNhap", t.getTenDangNhap()
+            var auth = new UsernamePasswordAuthenticationToken(
+                    t, // principal
+                    null,
+                    List.of() // nếu chưa dùng role
+            );
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            return ResponseEntity.ok(Map.of(
+                    MESSAGE, "Login success",
+                    "id", t.getId(),
+                    "tenTruSo", t.getTenTruSo(),
+                    "tenDangNhap", t.getTenDangNhap()
+            ));
+        }
+
+        // Hủy session hiện tại và xóa toàn bộ dữ liệu đăng nhập cũ nếu thông tin sai
+        session.invalidate();
+        SecurityContextHolder.clearContext();
+
+        return ResponseEntity.status(401).body(Map.of(
+                MESSAGE, "Tài khoản hoặc mật khẩu không đúng!"
         ));
     }
-           
 
-    return ResponseEntity.status(401).body(Map.of(
-            MESSAGE, "Sai tài khoản hoặc mật khẩu"
-    ));
-}
+    @GetMapping("/trang-chu")
+    public String trangChu(HttpSession session, Model model) {
 
-   @GetMapping("/trang-chu")
-public String trangChu(HttpSession session, Model model) {
+        if (session.getAttribute("currentTruSo") == null) {
+            return "redirect:/truso/login";
+        }
 
-    if (session.getAttribute("currentTruSo") == null) {
-        return "redirect:/truso/login";
+        model.addAttribute("mapboxToken", appConfig.getMapboxToken());
+
+        return "truso/trang-chu";
     }
 
-    model.addAttribute("mapboxToken", appConfig.getMapboxToken());
-
-    return "truso/trang-chu";
-}
     @GetMapping("/quan-ly-cuu-tro")
     public String quanLyCuuTro(HttpSession session) {
         if (session.getAttribute("currentTruSo") == null) {
@@ -127,11 +134,9 @@ public String trangChu(HttpSession session, Model model) {
         try {
             if (cs instanceof com.example.suco.model.TruSo) {
                 com.example.suco.model.TruSo current = (com.example.suco.model.TruSo) cs;
-                // Lấy các SOS đã hoàn thành cho trụ sở này
                 lichSu = tinHieuSOSRepository.findByIdTruSoTiepNhanAndTrangThai(current.getId(), "HOAN_THANH");
             }
         } catch (Exception e) {
-            // avoid throwing to template; log to stdout for troubleshooting
             System.err.println("Error loading lich su cuu tro: " + e.getMessage());
             e.printStackTrace();
             lichSu = java.util.Collections.emptyList();
@@ -139,6 +144,7 @@ public String trangChu(HttpSession session, Model model) {
         model.addAttribute("lichSuList", lichSu);
         return "truso/lich-su-cuu-tro";
     }
+
     @GetMapping("/dang-cuu-tro")
     public String dangCuuTro(HttpSession session) {
         if (session.getAttribute("currentTruSo") == null) {
@@ -146,14 +152,15 @@ public String trangChu(HttpSession session, Model model) {
         }
         return "truso/dang-cuu-tro";
     }
-    @GetMapping("/api/sos-cua-toi")
-@ResponseBody
-public List<TinHieuSOS> sosCuaToi(HttpSession session) {
-    TruSo current = (TruSo) session.getAttribute("currentTruSo");
-    if (current == null) return List.of();
 
-    return tinHieuSOSRepository.findActiveByTruSo(current.getId());
-}
+    @GetMapping("/api/sos-cua-toi")
+    @ResponseBody
+    public List<TinHieuSOS> sosCuaToi(HttpSession session) {
+        TruSo current = (TruSo) session.getAttribute("currentTruSo");
+        if (current == null) return List.of();
+
+        return tinHieuSOSRepository.findActiveByTruSo(current.getId());
+    }
 
     @GetMapping("/api/session")
     @ResponseBody
@@ -173,5 +180,4 @@ public List<TinHieuSOS> sosCuaToi(HttpSession session) {
                 "tenDangNhap", t.getTenDangNhap()
         ));
     }
-
 }

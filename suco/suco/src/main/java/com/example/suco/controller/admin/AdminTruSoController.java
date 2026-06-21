@@ -125,8 +125,9 @@ public class AdminTruSoController {
         truSo.setTenDangNhap(request.getTenDangNhap());
         truSo.setMatKhau(request.getMatKhau());
         // Fix Unboxing null safety
-        truSo.setKinhDo(request.getKinhDo() != null ? request.getKinhDo() : 0.0);
-        truSo.setViDo(request.getViDo() != null ? request.getViDo() : 0.0);
+        // SỬA TẠI ĐÂY: Truyền thẳng giá trị, không tự ý gán 0.0
+        truSo.setKinhDo(request.getKinhDo());
+        truSo.setViDo(request.getViDo());
         return truSo;
     }
 

@@ -4,6 +4,7 @@ public class AuthRequest {
 
     private String token;
     private String email;
+    private String googleIdToken;
 
     public AuthRequest() {
     }
@@ -22,5 +23,13 @@ public class AuthRequest {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getGoogleIdToken() {
+        return googleIdToken;
+    }
+
+    public void setGoogleIdToken(String googleIdToken) {
+        this.googleIdToken = googleIdToken;
     }
 }

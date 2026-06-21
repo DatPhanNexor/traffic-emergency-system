@@ -64,6 +64,7 @@ public class SecurityConfig {
                 .requestMatchers(ADMIN_URL_PATTERN).hasRole(ADMIN_ROLE)
                 .requestMatchers(API_GOI_URL_PATTERN).hasRole(ADMIN_ROLE)
                 .requestMatchers(API_ADMIN_USER_URL_PATTERN).hasRole(ADMIN_ROLE)
+                .requestMatchers("/api/admin/**").hasRole(ADMIN_ROLE)
 
                 // 3. USER + ADMIN: Yêu cầu đăng nhập nói chung
                 .requestMatchers(API_MAP_URL_PATTERN).authenticated()

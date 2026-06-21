@@ -102,6 +102,10 @@ public class BaoCaoSuCoApiController {
     public ResponseEntity<?> getMyReports(
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
+        if (authHeader == null || authHeader.isBlank()) {
+            // [FIX] Nếu không có token -> Trả về danh sách sự cố công khai (Public API)
+            return ResponseEntity.ok(reportRepository.findAllForMap());
+        }
         try {
             String uid = resolveUid(authHeader);
             return ResponseEntity.ok(userBaoCaoService.getMyReports(uid));
@@ -120,6 +124,29 @@ public class BaoCaoSuCoApiController {
     ) {
         return getMyReports(authHeader);
     }
+
+    @GetMapping("/my-reports")
+    public ResponseEntity<?> getMyReportsOnly(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        if (authHeader == null || authHeader.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Token xác thực không được để trống"
+            );
+        }
+        try {
+            String uid = resolveUid(authHeader);
+            return ResponseEntity.ok(userBaoCaoService.getMyReports(uid));
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode())
+                    .body(Map.of("message", ex.getReason()));
+        }
+    }
+
+
 
    @GetMapping("/map-data")
 public List<SuCoMapDto> getAllForMap() {

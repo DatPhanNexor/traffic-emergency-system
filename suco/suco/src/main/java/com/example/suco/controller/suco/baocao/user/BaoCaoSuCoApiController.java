@@ -88,22 +88,33 @@ public class BaoCaoSuCoApiController {
     );
 
         } catch (FirebaseAuthException e) {
-        return ResponseEntity.status(401).body(
-            new AiRejectResponse("UNAUTHORIZED", "Lỗi xác thực: " + e.getMessage(), 0)
-        );
-    }
+            return ResponseEntity.status(401).body(
+                new AiRejectResponse("UNAUTHORIZED", "Lỗi xác thực: " + e.getMessage(), 0)
+            );
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode()).body(
+                new AiRejectResponse("UNAUTHORIZED", ex.getReason(), 0)
+            );
+        }
     }
 
     @GetMapping
     public ResponseEntity<?> getMyReports(
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
+        if (authHeader == null || authHeader.isBlank()) {
+            // [FIX] Nếu không có token -> Trả về danh sách sự cố công khai (Public API)
+            return ResponseEntity.ok(reportRepository.findAllForMap());
+        }
         try {
             String uid = resolveUid(authHeader);
             return ResponseEntity.ok(userBaoCaoService.getMyReports(uid));
         } catch (FirebaseAuthException e) {
             return ResponseEntity.status(401)
                     .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode())
+                    .body(Map.of("message", ex.getReason()));
         }
     }
 
@@ -114,6 +125,29 @@ public class BaoCaoSuCoApiController {
         return getMyReports(authHeader);
     }
 
+    @GetMapping("/my-reports")
+    public ResponseEntity<?> getMyReportsOnly(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        if (authHeader == null || authHeader.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Token xác thực không được để trống"
+            );
+        }
+        try {
+            String uid = resolveUid(authHeader);
+            return ResponseEntity.ok(userBaoCaoService.getMyReports(uid));
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Xác thực thất bại: " + e.getMessage()));
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode())
+                    .body(Map.of("message", ex.getReason()));
+        }
+    }
+
+
+
    @GetMapping("/map-data")
 public List<SuCoMapDto> getAllForMap() {
     return reportRepository.findAllForMap(); 
@@ -123,14 +157,19 @@ public List<SuCoMapDto> getAllForMap() {
 @PatchMapping("/{id}")
 public ResponseEntity<?> cancelReport(
     @RequestHeader(value = "Authorization", required = false) String authHeader,
-        @PathVariable Long id,
-        @RequestBody(required = false) Map<String, String> body,
-        @RequestParam(required = false) String status,
-        @RequestParam(required = false) Long idTruSo
+    @PathVariable Long id
 ) {
-    return ResponseEntity.ok(
-            Map.of("message", "Cập nhật trạng thái thành công")
-    );
+    try {
+        String uid = resolveUid(authHeader);
+        return userBaoCaoService.cancelReport(id, uid);
+    } catch (FirebaseAuthException e) {
+        return ResponseEntity.status(401).body(
+            Map.of("message", "Lỗi xác thực: " + e.getMessage())
+        );
+    } catch (org.springframework.web.server.ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(Map.of("message", ex.getReason()));
+    }
 }
 
 @PutMapping("/cap-nhat-trang-thai/{id}")
@@ -150,7 +189,9 @@ public ResponseEntity<?> updateReportStatus(
 
 private String resolveUid(String authHeader) throws FirebaseAuthException {
     if (authHeader == null || authHeader.isBlank()) {
-        return "test-user";
+        throw new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.UNAUTHORIZED, "Token xác thực không được để trống"
+        );
     }
 
     return firebaseService.extractUid(authHeader);

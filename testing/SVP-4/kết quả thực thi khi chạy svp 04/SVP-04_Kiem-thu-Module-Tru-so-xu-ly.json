@@ -1,0 +1,1400 @@
+{
+  "info": {
+    "_postman_id": "itc-26-29-incident-management",
+    "name": "ITC_26-29_Incident_Management",
+    "description": "Test Cases for Incident Management (Quản lý Sự cố)\n- ITC_26: Get incidents with authentication\n- ITC_27: Update incident severity level\n- ITC_28: Change incident status\n- ITC_29: Get incident history",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Function 26 - Get Incidents",
+      "description": "Test cases for retrieving incidents from area office (Trụ sở)",
+      "item": [
+        {
+          "name": "ITC_26.1 - Get incidents without login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/incidents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ]
+            },
+            "description": "Trụ sở chưa đăng nhập - Should return 401"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 - Not Authenticated', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.text()).to.include('session');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_26.2 - Get incidents when logged in",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/incidents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ]
+            },
+            "description": "Trụ sở đăng nhập - Should return 200 and incident data"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Success', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response should be array', function() {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_26.3 - Get incidents with status 'Chờ xử lý' (Pending)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/incidents?status=pending",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Trụ sở đăng nhập - Lấy sự cố chờ xử lý - Should return 200 with only pending incidents"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Success', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All incidents should have status = pending', function() {",
+                  "    var incidents = pm.response.json();",
+                  "    incidents.forEach(function(incident) {",
+                  "        pm.expect(incident.status).to.equal('pending');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_26.4 - Get incidents with status 'Đang xử lý' (In Progress)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/incidents?status=in_progress",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "in_progress"
+                }
+              ]
+            },
+            "description": "Trụ sở đăng nhập - Lấy sự cố đang xử lý - Should return 200 with only in-progress incidents"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Success', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All incidents should have status = in_progress', function() {",
+                  "    var incidents = pm.response.json();",
+                  "    incidents.forEach(function(incident) {",
+                  "        pm.expect(incident.status).to.equal('in_progress');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_26.5 - Get incidents with invalid format",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/incidents?status=invalid_status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "invalid_status"
+                }
+              ]
+            },
+            "description": "Tìm kiếm sai định dạng - Should return 200 with empty array"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Success', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response should be empty array', function() {",
+                  "    var incidents = pm.response.json();",
+                  "    pm.expect(incidents).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Function 27 - Update Incident Severity Level",
+      "description": "Test cases for updating incident severity level (Cập nhật mức độ sự cố)",
+      "item": [
+        {
+          "name": "ITC_27.1 - Update severity without login",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Trụ sở không đăng nhập - Should return 401"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 - Not Authenticated', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.2 - Update severity for non-existent incident",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/99999/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "99999",
+                "severity"
+              ]
+            },
+            "description": "ID báo cáo không tồn tại - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Incident not found', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('not exist');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.3 - Update severity for pending incident (not accepted)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{pending_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{pending_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Sự cố chưa được tiếp nhận - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot update pending incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.4 - Update severity for completed incident",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{completed_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{completed_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Sự cố đã kết thúc - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot update completed incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('completed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.5 - Update severity for cancelled incident",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{cancelled_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{cancelled_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Sự cố đã hủy bỏ - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot update cancelled incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.6 - Update severity for in-progress incident (correct area)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Trụ sở đã tiếp nhận sự cố - Should return 200"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Severity updated successfully', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.7 - Update severity for in-progress incident (different area)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token_other_area}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Trụ sở khác đã tiếp nhận sự cố - Should return 403"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 403 - Forbidden (different area office)', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "    pm.expect(pm.response.text()).to.include('permission');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.8 - Update severity with null/empty value",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Cập nhật thiếu mức độ - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Empty severity level', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('empty');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_27.9 - Update severity with non-existent level",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity_level\": \"invalid_level\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/severity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "severity"
+              ]
+            },
+            "description": "Cập nhật sai mức độ - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Invalid severity level', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('not allowed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Function 28 - Change Incident Status",
+      "description": "Test cases for changing incident status (Thay đổi trạng thái sự cố)",
+      "item": [
+        {
+          "name": "ITC_28.1 - Accept incident (Pending -> In Progress)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{pending_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{pending_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Tiếp nhận sự cố (Chờ xử lý -> Đang xử lý) - Should return 200"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Status changed successfully', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.2 - Complete incident from pending (Pending -> Completed)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{pending_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{pending_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Không thể hoàn thành khi chưa tiếp nhận - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot complete pending incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('not accepted');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.3 - Cancel incident from pending (Pending -> Cancelled)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{pending_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{pending_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Hủy bỏ sự cố chờ xử lý - Should return 200"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Incident cancelled', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.4 - Cannot revert to pending from in-progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Không thể quay về Chờ xử lý khi đã tiếp nhận - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot revert to pending', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('cannot revert');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.5 - Complete incident from in-progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Hoàn thành sự cố đang xử lý - Should return 200"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Incident completed', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.6 - Cannot cancel incident from in-progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{inprogress_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{inprogress_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Sự cố đang xử lý không thể hủy bỏ - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot cancel in-progress incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('cannot cancel');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.7 - Cannot revert completed to pending",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{completed_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{completed_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Không thể quay lại vì sự cố đã kết thúc - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot revert completed incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('completed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.8 - Cannot revert completed to in-progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{completed_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{completed_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Không thể quay lại vì sự cố đã kết thúc - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot revert completed incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('completed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.9 - Cannot cancel completed incident",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{completed_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{completed_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Không thể quay lại vì sự cố đã kết thúc - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot cancel completed incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('completed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.10 - Cannot revert cancelled to pending",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{cancelled_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{cancelled_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Sự cố đã hủy bỏ, không thể trả lại trạng thái - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot revert cancelled incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.11 - Cannot revert cancelled to in-progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{cancelled_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{cancelled_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Sự cố đã hủy bỏ, không thể trả lại trạng thái - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot revert cancelled incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_28.12 - Cannot complete cancelled incident",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/incidents/{{cancelled_incident_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "{{cancelled_incident_id}}",
+                "status"
+              ]
+            },
+            "description": "Sự cố đã hủy bỏ, không thể trả lại trạng thái - Should return 400"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 - Cannot complete cancelled incident', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.text()).to.include('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Function 29 - Get Incident History",
+      "description": "Test cases for retrieving incident history (Lấy lịch sử sự cố)",
+      "item": [
+        {
+          "name": "ITC_29.1 - Get incident history successfully",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/incidents/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "history"
+              ]
+            },
+            "description": "Lấy lịch sử sự cố thành công - Should return 200 with completed incidents"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 - Success', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response should be array of completed incidents', function() {",
+                  "    var incidents = pm.response.json();",
+                  "    pm.expect(incidents).to.be.an('array');",
+                  "    incidents.forEach(function(incident) {",
+                  "        pm.expect(incident.status).to.equal('completed');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ITC_29.2 - Get incident history without login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/incidents/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "incidents",
+                "history"
+              ]
+            },
+            "description": "Trụ sở không đăng nhập - Should return 401"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 - Not Authenticated', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.text()).to.include('session');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for authenticated requests"
+    },
+    {
+      "key": "access_token_other_area",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for different area office"
+    },
+    {
+      "key": "incident_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "pending_incident_id",
+      "value": "1",
+      "type": "string",
+      "description": "ID of incident with status 'Chờ xử lý'"
+    },
+    {
+      "key": "inprogress_incident_id",
+      "value": "2",
+      "type": "string",
+      "description": "ID of incident with status 'Đang xử lý'"
+    },
+    {
+      "key": "completed_incident_id",
+      "value": "3",
+      "type": "string",
+      "description": "ID of incident with status 'Hoàn thành'"
+    },
+    {
+      "key": "cancelled_incident_id",
+      "value": "4",
+      "type": "string",
+      "description": "ID of incident with status 'Hủy bỏ'"
+    }
+  ]
+}

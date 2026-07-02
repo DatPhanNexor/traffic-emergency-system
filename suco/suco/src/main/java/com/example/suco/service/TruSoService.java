@@ -8,10 +8,12 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.suco.dto.TruSoMapDto;
 import com.example.suco.model.TruSo;
@@ -33,75 +35,122 @@ public class TruSoService {
 
     @Transactional
     public TruSo saveTruSo(TruSo truSo) {
+        // 1. Validate tọa độ và sinh Geohash (Fix B05)
+        validateCoordinates(truSo);
         String gh = GeoHash.withCharacterPrecision(truSo.getViDo(), truSo.getKinhDo(), 6).toBase32();
         truSo.setGeohash(gh);
 
+        // 2. Validate thông tin cơ bản và Username (Fix Sonar Generic Exception)
+        validateBasicInfo(truSo);
+        validateUsernameUniqueness(truSo);
 
-        // ================= VALIDATE USERNAME =================
-String username = truSo.getTenDangNhap();
+        // 3. Validate mật khẩu chi tiết (Fix B04)
+        validatePasswordComplexity(truSo);
 
-if (username == null 
-    || username.length() < 5 
-    || username.length() > 20 
-    || username.contains(" ")) {
-    throw new RuntimeException("Tên đăng nhập phải 5-20 ký tự, không chứa khoảng trắng");
-}
+        // 4. Lưu dữ liệu (Đã tách hàm để giảm Complexity xuống dưới 15)
+        TruSo saved = finalizeAndSave(truSo, gh);
 
-// CHECK TRÙNG USERNAME
-boolean isDuplicate = truSoRepository.existsByTenDangNhap(username);
-
-if (truSo.getId() == null) {
-    // CREATE
-    if (isDuplicate) {
-        throw new RuntimeException("Tên đăng nhập đã tồn tại");
+        // 5. Thông báo qua WebSocket
+        messagingTemplate.convertAndSend("/topic/tru-so", 
+            new TruSoMapDto(saved.getId(), saved.getTenTruSo(), saved.getKinhDo(), saved.getViDo()));
+        
+        return saved;
     }
-} else {
-    // UPDATE
-    TruSo existing = truSoRepository.findById(truSo.getId())
-        .orElseThrow(() -> new RuntimeException("Không tìm thấy trụ sở"));
 
-    if (!existing.getTenDangNhap().equals(username) && isDuplicate) {
-        throw new RuntimeException("Tên đăng nhập đã tồn tại");
-    }
-}
-
-// ================= VALIDATE PASSWORD =================
-String password = truSo.getMatKhau();
-String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$";
-
-// 👉 CHỈ validate khi:
-// - tạo mới
-// - hoặc có nhập password mới
-if (truSo.getId() == null || (password != null && !password.isBlank())) {
-    if (password == null || !password.matches(regex)) {
-        throw new RuntimeException("Mật khẩu phải >=8 ký tự, gồm hoa, thường, số và ký tự đặc biệt");
-    }
-}
-        TruSo saved;
+    private TruSo finalizeAndSave(TruSo truSo, String gh) {
         if (truSo.getId() != null) {
-            saved = truSoRepository.findById(truSo.getId())
-                    .map(existing -> {
-                        existing.setKinhDo(truSo.getKinhDo());
-                        existing.setViDo(truSo.getViDo());
-                        existing.setGeohash(gh);
-                        if (truSo.getTenTruSo() != null) existing.setTenTruSo(truSo.getTenTruSo());
-                        // Chỉ mã hóa nếu mật khẩu mới KHÁC với mật khẩu đã lưu (tức là mật khẩu thô mới)
-                        if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank() 
-                            && !truSo.getMatKhau().equals(existing.getMatKhau())) {
-                            existing.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
-                        }
-                        return truSoRepository.save(existing);
-                    })
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy trụ sở ID: " + truSo.getId()));
-        } else {
-            if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank()) {
-                truSo.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
-            }
-            saved = truSoRepository.save(truSo);
+            return processUpdate(truSo, gh);
+        } 
+        
+        if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank()) {
+            truSo.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
+        }
+        return truSoRepository.save(truSo);
+    }
+
+    // --- CÁC HÀM PHỤ TRỢ (HELPER METHODS) ĐÃ ĐƯỢC TỐI ƯU ---
+
+    private void validateCoordinates(TruSo truSo) {
+        if (truSo.getKinhDo() == null || truSo.getViDo() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Kinh độ và vĩ độ không được để trống");
+        }
+        if (truSo.getViDo() < -90 || truSo.getViDo() > 90 || truSo.getKinhDo() < -180 || truSo.getKinhDo() > 180) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tọa độ không hợp lệ");
+        }
+    }
+
+    private void validateBasicInfo(TruSo truSo) {
+        if (truSo.getTenTruSo() == null || truSo.getTenTruSo().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên trụ sở không được để trống");
+        }
+        if (truSo.getTenTruSo().length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên trụ sở không được vượt quá 255 ký tự");
+        }
+    }
+
+    private void validateUsernameUniqueness(TruSo truSo) {
+        String username = truSo.getTenDangNhap();
+        if (username == null || username.length() < 5 || username.length() > 20 || username.contains(" ")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên đăng nhập phải 5-20 ký tự, không chứa khoảng trắng");
         }
 
-        messagingTemplate.convertAndSend("/topic/tru-so", new TruSoMapDto(saved.getId(), saved.getTenTruSo(), saved.getKinhDo(), saved.getViDo()));
-        return saved;
+        boolean isDuplicate = truSoRepository.existsByTenDangNhap(username);
+        if (truSo.getId() == null) {
+            if (isDuplicate) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên đăng nhập đã tồn tại");
+        } else {
+            TruSo existing = truSoRepository.findById(truSo.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy trụ sở"));
+            if (!existing.getTenDangNhap().equals(username) && isDuplicate) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên đăng nhập đã tồn tại");
+            }
+        }
+    }
+
+    private void validatePasswordComplexity(TruSo truSo) {
+        String password = truSo.getMatKhau();
+        if (truSo.getId() == null || (password != null && !password.isBlank())) {
+            checkPasswordRules(password);
+        }
+    }
+    private void checkPasswordRules(String password) {
+        if (password.trim().isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được để trống");
+        if (password.length() > 256) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu không được vượt quá 256 ký tự");
+        if (password.length() < 8) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 8 ký tự");
+
+        // FIX SONAR: Kiểm tra thủ công từng ký tự để tránh lỗi ReDoS (Denial of Service)
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+        String specialChars = "@$!%*?&";
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUpper = true;
+            else if (Character.isLowerCase(c)) hasLower = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            else if (specialChars.indexOf(c) != -1) hasSpecial = true;
+        }
+
+        if (!hasUpper) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ hoa");
+        if (!hasLower) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 chữ thường");
+        if (!hasDigit) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 số");
+        if (!hasSpecial) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu phải có ít nhất 1 ký tự đặc biệt");
+    }
+
+    private TruSo processUpdate(TruSo truSo, String gh) {
+        return truSoRepository.findById(truSo.getId())
+                .map(existing -> {
+                    existing.setKinhDo(truSo.getKinhDo());
+                    existing.setViDo(truSo.getViDo());
+                    existing.setGeohash(gh);
+                    if (truSo.getTenTruSo() != null) existing.setTenTruSo(truSo.getTenTruSo().trim());
+                    if (truSo.getMatKhau() != null && !truSo.getMatKhau().isBlank() 
+                        && !truSo.getMatKhau().equals(existing.getMatKhau())) {
+                        existing.setMatKhau(passwordEncoder.encode(truSo.getMatKhau()));
+                    }
+                    return truSoRepository.save(existing);
+                })
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy trụ sở ID: " + truSo.getId()));
     }
 
     public List<TruSoMapDto> getAllTruSoForMap() {
@@ -111,40 +160,27 @@ if (truSo.getId() == null || (password != null && !password.isBlank())) {
     }
 
     @Transactional
-public void deleteTruSo(Long id) {
-    TruSo ts = truSoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Trụ sở không tồn tại"));
+    public void deleteTruSo(Long id) {
+        TruSo ts = truSoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trụ sở không tồn tại"));
+        truSoRepository.delete(ts);
+        messagingTemplate.convertAndSend("/topic/tru-so-delete", id);
+    }
 
-    truSoRepository.delete(ts);
-    messagingTemplate.convertAndSend("/topic/tru-so-delete", id);
-}
-
-    // LOGIC TÌM KIẾM CHI TIẾT VỚI ĐẦY ĐỦ LOG
     public TruSo timTruSoGanNhat(double userLat, double userLng) {
-        log.debug("DEBUG: Đang tìm trụ sở cho vị trí {}, {}", userLat, userLng);
-        String khuVuc = (userLat > 10.0 && userLat < 11.0 && userLng > 106.0 && userLng < 107.0) 
-                        ? "TP. Hồ Chí Minh (Khu vực trọng điểm)" : "Ngoài vùng phủ sóng ưu tiên";
-
-        log.info("==================== HỆ THỐNG ĐỊNH VỊ SOS/SỰ CỐ ====================");
-        log.info("[VỊ TRÍ] Tọa độ: {}, {}", userLat, userLng);
-        log.info("[ĐỊA ĐIỂM]  Ước tính: {}", khuVuc);
-        log.info("--------------------------------------------------------------");
-
+        log.info("--- Tìm kiếm định vị trụ sở gần nhất ---");
         List<TruSo> candidates = new ArrayList<>();
         int precision = 6; 
 
         while (precision >= 4 && candidates.isEmpty()) {
             GeoHash center = GeoHash.withCharacterPrecision(userLat, userLng, precision);
             String currentHash = center.toBase32();
-
             List<String> searchPrefixes = new ArrayList<>();
             searchPrefixes.add(currentHash);
             for (GeoHash adjacent : center.getAdjacent()) {
                 searchPrefixes.add(adjacent.toBase32());
             }
 
-            log.info("[BƯỚC 1: QUÉT VÙNG] Cấp độ {} | Mã Geohash: {}...", precision, currentHash);
-            
             if (precision == 6) {
                 candidates = truSoRepository.findByGeohashIn(searchPrefixes);
             } else {
@@ -153,36 +189,20 @@ public void deleteTruSo(Long id) {
                 }
                 candidates = new ArrayList<>(new HashSet<>(candidates));
             }
-
-            if (candidates.isEmpty()) {
-                log.warn("   => Không có trụ sở ở cấp {}. Đang tự động lùi cấp...", precision);
-                precision--; 
-            }
+            if (candidates.isEmpty()) precision--; 
         }
 
-        if (candidates.isEmpty()) {
-            log.error("[CẢNH BÁO] Quét toàn bộ DB.");
-            candidates = truSoRepository.findAll();
-        }
+        if (candidates.isEmpty()) candidates = truSoRepository.findAll();
 
         TruSo ganNhat = null;
         double minD = Double.MAX_VALUE;
-
         for (TruSo ts : candidates) {
             double d = tinhKhoangCach(userLat, userLng, ts.getViDo(), ts.getKinhDo());
-            log.info("   -> Xét: {} | Khoảng cách: {} mét", ts.getTenTruSo(), Math.round(d * 1000));
-
             if (d < minD) {
                 minD = d;
                 ganNhat = ts;
             }
         }
-
-        if (ganNhat != null) {
-            log.info("[KẾT QUẢ] TRỤ SỞ TIẾP NHẬN: {} (Cách {} mét)", ganNhat.getTenTruSo(), Math.round(minD * 1000));
-            log.info("==============================================================");
-        }
-
         return ganNhat;
     }
 
@@ -196,16 +216,10 @@ public void deleteTruSo(Long id) {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    /**
-     * Tìm trụ sở theo ID.
-     */
     public TruSo timTruSoTheoId(Long idTruSo) {
         return truSoRepository.findById(idTruSo).orElse(null);
     }
 
-    /**
-     * Lấy tất cả trụ sở.
-     */
     public List<TruSo> layTatCaTruSo() {
         return truSoRepository.findAll();
     }

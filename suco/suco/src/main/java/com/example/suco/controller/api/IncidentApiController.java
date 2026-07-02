@@ -167,6 +167,25 @@ public class IncidentApiController {
         return userBaoCaoService.updateReportStatus(id, resolvedStatus, idTruSo);
     }
 
+    @PutMapping("/cancel/{id}")
+    public ResponseEntity<?> cancelIncident(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @PathVariable Long id
+    ) {
+        try {
+            String uid = resolveUid(authHeader);
+            return userBaoCaoService.cancelReport(id, uid);
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(401).body(
+                    Map.of("message", "Lỗi xác thực: " + e.getMessage())
+            );
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode())
+                    .body(Map.of("message", ex.getReason()));
+        }
+    }
+
+
     private String resolveUid(String authHeader) throws FirebaseAuthException {
         if (authHeader == null || authHeader.isBlank()) {
             return "test-user";

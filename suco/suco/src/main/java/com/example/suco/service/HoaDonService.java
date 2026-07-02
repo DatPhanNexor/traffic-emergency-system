@@ -77,12 +77,9 @@ public class HoaDonService {
 
         /*
          * FIX SVP03-BUG-005:
-         * Không cho tạo hóa đơn trùng cho cùng một SOS.
-         *
-         * Riêng case có quaId:
-         * Cho phép cập nhật voucher vào hóa đơn đã tồn tại.
-         * Đây là case ITC_42.2 trong Postman: tạo/cập nhật hóa đơn có voucher
-         * sau khi SOS đã hoàn thành.
+         * Nếu SOS đã có hóa đơn:
+         * - Có quaId: cho phép cập nhật voucher vào hóa đơn cũ.
+         * - Không có quaId: chặn tạo trùng, trả 400.
          */
         Optional<HoaDon> hoaDonDaCo = hoaDonRepository.findBySosId(sosId);
 
@@ -91,7 +88,7 @@ public class HoaDonService {
 
             if (quaId != null) {
                 apDungVoucherChoHoaDon(existing, quaId);
-                return hoaDonRepository.save(existing);
+                return existing;
             }
 
             throw new RuntimeException("SOS này đã có hóa đơn");
@@ -100,42 +97,42 @@ public class HoaDonService {
         BigDecimal giaGoc = tinhGiaGoc(sos, truso, giaThuCong);
         BigDecimal soTienGiam = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 
-        HoaDon hd = new HoaDon();
-        hd.setSosId(sosId);
-        hd.setTrusoId(trusoId);
-        hd.setUserId(sos.getUserId());
-        hd.setTenSos(tenSos);
-        hd.setNoiDungXuLy(xuLy);
-        hd.setThanhTien(giaGoc);
+        HoaDon hoaDon = new HoaDon();
+        hoaDon.setSosId(sosId);
+        hoaDon.setTrusoId(trusoId);
+        hoaDon.setUserId(sos.getUserId());
+        hoaDon.setTenSos(tenSos);
+        hoaDon.setNoiDungXuLy(xuLy);
+        hoaDon.setThanhTien(giaGoc);
 
         if (quaId != null) {
             soTienGiam = tinhTienGiamTuVoucher(giaGoc, quaId);
-            hd.setQuaId(quaId);
+            hoaDon.setQuaId(quaId);
         }
 
-        hd.setSoTienGiam(soTienGiam);
-        hd.setTongThanhToan(tinhTongThanhToan(giaGoc, soTienGiam));
-        hd.setTrangThai(
-                hd.getTongThanhToan().compareTo(BigDecimal.ZERO) == 0
+        hoaDon.setSoTienGiam(soTienGiam);
+        hoaDon.setTongThanhToan(tinhTongThanhToan(giaGoc, soTienGiam));
+        hoaDon.setTrangThai(
+                hoaDon.getTongThanhToan().compareTo(BigDecimal.ZERO) == 0
                         ? STATUS_PAID
                         : STATUS_PENDING
         );
 
-        HoaDon savedHd = hoaDonRepository.save(hd);
+        HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
 
-        sos.setHoaDon(savedHd);
+        sos.setHoaDon(savedHoaDon);
         tinHieuSOSRepository.save(sos);
 
         if (quaId != null) {
-            truVoucherCuaUser(savedHd.getUserId(), quaId);
+            truVoucherCuaUser(savedHoaDon.getUserId(), quaId);
         }
 
-        return savedHd;
+        return savedHoaDon;
     }
 
     @Transactional
-    public void apDungVoucherChoHoaDon(HoaDon hd, Long quaId) {
-        if (hd == null) {
+    public void apDungVoucherChoHoaDon(HoaDon hoaDon, Long quaId) {
+        if (hoaDon == null) {
             throw new RuntimeException("Không tìm thấy hóa đơn");
         }
 
@@ -143,33 +140,33 @@ public class HoaDonService {
             throw new RuntimeException("Voucher không được để trống");
         }
 
-        if (STATUS_PAID.equalsIgnoreCase(hd.getTrangThai())) {
+        if (STATUS_PAID.equalsIgnoreCase(hoaDon.getTrangThai())) {
             throw new RuntimeException("Hóa đơn đã được thanh toán trước đó");
         }
 
-        BigDecimal giaGoc = normalizeMoney(hd.getThanhTien());
+        BigDecimal giaGoc = normalizeMoney(hoaDon.getThanhTien());
         BigDecimal soTienGiam = tinhTienGiamTuVoucher(giaGoc, quaId);
 
-        boolean daApDungVoucherNay =
-                hd.getQuaId() != null && hd.getQuaId().equals(quaId);
+        boolean daApDungDungVoucherNay =
+                hoaDon.getQuaId() != null && hoaDon.getQuaId().equals(quaId);
 
-        hd.setQuaId(quaId);
-        hd.setSoTienGiam(soTienGiam);
-        hd.setTongThanhToan(tinhTongThanhToan(giaGoc, soTienGiam));
-        hd.setTrangThai(
-                hd.getTongThanhToan().compareTo(BigDecimal.ZERO) == 0
+        hoaDon.setQuaId(quaId);
+        hoaDon.setSoTienGiam(soTienGiam);
+        hoaDon.setTongThanhToan(tinhTongThanhToan(giaGoc, soTienGiam));
+        hoaDon.setTrangThai(
+                hoaDon.getTongThanhToan().compareTo(BigDecimal.ZERO) == 0
                         ? STATUS_PAID
                         : STATUS_PENDING
         );
 
-        hoaDonRepository.save(hd);
+        hoaDonRepository.save(hoaDon);
 
         /*
-         * Tránh trừ voucher lặp lại nếu Postman Runner hoặc frontend gọi lại
-         * cùng một hóa đơn với cùng quaId.
+         * Tránh trừ voucher lặp nếu Postman hoặc frontend gọi lại cùng một hóa đơn
+         * với cùng một quaId.
          */
-        if (!daApDungVoucherNay) {
-            truVoucherCuaUser(hd.getUserId(), quaId);
+        if (!daApDungDungVoucherNay) {
+            truVoucherCuaUser(hoaDon.getUserId(), quaId);
         }
     }
 
@@ -195,8 +192,8 @@ public class HoaDonService {
         /*
          * FIX SVP03-BUG-004:
          * Trước đây chỉ cho tạo hóa đơn khi SOS đang DANG_XU_LY.
-         * Nhưng Postman ITC_42.2 tạo hóa đơn có voucher sau khi SOS đã HOAN_THANH.
-         * Vì vậy phải cho phép cả DANG_XU_LY và HOAN_THANH.
+         * Postman ITC_42.2 tạo hóa đơn có voucher sau khi SOS đã HOAN_THANH,
+         * nên phải cho phép cả DANG_XU_LY và HOAN_THANH.
          */
         if (!(STATUS_DANG_XU_LY.equals(sos.getTrangThai())
                 || STATUS_HOAN_THANH.equals(sos.getTrangThai()))) {
@@ -205,11 +202,10 @@ public class HoaDonService {
     }
 
     private BigDecimal tinhGiaGoc(TinHieuSOS sos, TruSo truso, Double giaThuCong) {
-        Optional<MuaGoi> muaGoiOpt =
-                muaGoiRepository.findFirstByUserIdAndTrangThai(
-                        sos.getUserId(),
-                        STATUS_ACTIVE
-                );
+        Optional<MuaGoi> muaGoiOpt = muaGoiRepository.findFirstByUserIdAndTrangThai(
+                sos.getUserId(),
+                STATUS_ACTIVE
+        );
 
         if (muaGoiOpt.isEmpty()) {
             return normalizeMoney(
@@ -250,10 +246,14 @@ public class HoaDonService {
             throw new RuntimeException("Vật phẩm này không phải là Voucher");
         }
 
-        BigDecimal phanTramGiam = BigDecimal.valueOf(voucher.getGiaTriGiamPercent())
-                .divide(ONE_HUNDRED, 4, RoundingMode.HALF_UP);
+        BigDecimal phanTramGiam = BigDecimal.ZERO;
 
-        BigDecimal soTienGiam = giaGoc.multiply(phanTramGiam);
+        if (voucher.getGiaTriGiamPercent() != null) {
+            phanTramGiam = BigDecimal.valueOf(voucher.getGiaTriGiamPercent())
+                    .divide(ONE_HUNDRED, 4, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal soTienGiam = normalizeMoney(giaGoc).multiply(phanTramGiam);
 
         if (voucher.getGiaTriToiDa() != null
                 && soTienGiam.compareTo(voucher.getGiaTriToiDa()) > 0) {

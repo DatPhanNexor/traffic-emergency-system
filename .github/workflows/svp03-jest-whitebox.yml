@@ -1,0 +1,47 @@
+name: SVP-03 Jest White-box Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+jobs:
+  svp03-jest-whitebox:
+    name: SVP-03 Jest Coverage
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: suco
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: suco/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run SVP-03 Jest white-box coverage
+        run: npm run coverage:svp03
+
+      - name: Upload SVP-03 coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: svp03-jest-coverage-report
+          path: suco/coverage/svp03

@@ -33,7 +33,7 @@ build/
 .vscode/
 
 # Chặn file Admin SDK Firebase 
-canhbao-b600b-firebase-adminsdk-*.json
+**/*firebase-adminsdk-*.json
 
 # Chặn log và file chạy tạm
 *.log

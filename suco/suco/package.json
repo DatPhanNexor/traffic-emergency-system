@@ -1,0 +1,16 @@
+{
+  "name": "suco",
+  "version": "1.0.0",
+  "description": "SVP-03 white-box Jest testing",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "jest",
+    "test:svp03": "jest --config jest.config.svp03.js",
+    "coverage:svp03": "jest --config jest.config.svp03.js --coverage --ci --runInBand"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
+  }
+}

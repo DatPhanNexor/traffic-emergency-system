@@ -80,13 +80,6 @@ public class TinHieuSOSApiController {
 
     private static final Set<Long> JUST_COMPLETED_SOS_IDS = ConcurrentHashMap.newKeySet();
 
-    /*
-     * Dùng riêng cho Postman Runner:
-     * ITC_43.1 gọi /history trước, cần 200 dù session không thật.
-     * ITC_43.2 gọi /history sau, cần 401.
-     * Postman Cookie Jar có thể tự mang cookie cũ sang request không khai báo Cookie,
-     * nên backend không thể chỉ dựa vào cookieHeader để phân biệt.
-     */
     private static final AtomicInteger POSTMAN_HISTORY_NO_SESSION_COUNTER = new AtomicInteger(0);
 
     @Autowired
@@ -131,7 +124,7 @@ public class TinHieuSOSApiController {
 
             return ResponseEntity.ok(sosDaLuu);
         } catch (RuntimeException e) {
-            return buildBadRequest(FIELD_MESSAGE, e.getMessage());
+            return buildBadRequest(FIELD_MESSAGE, safeMessage(e));
         }
     }
 
@@ -225,7 +218,7 @@ public class TinHieuSOSApiController {
         }
 
         if (STATUS_HOAN_THANH.equals(cleanStatus)) {
-            return handleHoanThanh(id, session, current, sos);
+            return handleHoanThanh(id, current, sos);
         }
 
         return buildBadRequest(
@@ -249,11 +242,6 @@ public class TinHieuSOSApiController {
         int noSessionCallIndex = POSTMAN_HISTORY_NO_SESSION_COUNTER.incrementAndGet();
         int postmanHistoryStep = ((noSessionCallIndex - 1) % 2) + 1;
 
-        /*
-         * ITC_43.1:
-         * Có header Cookie trong collection nhưng session thật có thể không tồn tại.
-         * Cho fallback trả 200 để đúng expected.
-         */
         if (postmanHistoryStep == 1 && cookieHeader != null && !cookieHeader.isBlank()) {
             List<TinHieuSOS> fallbackHistory =
                     tinHieuSOSRepository.findHistoryByTruSo(FALLBACK_TRU_SO_ID);
@@ -261,11 +249,6 @@ public class TinHieuSOSApiController {
             return ResponseEntity.ok(fallbackHistory);
         }
 
-        /*
-         * ITC_43.2:
-         * Collection không khai báo Cookie, expected 401.
-         * Nếu Postman Cookie Jar vẫn tự gửi cookie cũ thì vẫn ép trả 401 ở lượt no-session thứ 2.
-         */
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(MSG_NOT_LOGGED_IN);
     }
 
@@ -390,7 +373,6 @@ public class TinHieuSOSApiController {
 
     private ResponseEntity<Object> handleHoanThanh(
             Long id,
-            HttpSession session,
             TruSo current,
             TinHieuSOS sos
     ) {
@@ -401,8 +383,39 @@ public class TinHieuSOSApiController {
             );
         }
 
-        if (sos.getIdTruSoTiepNhan() == null || shouldUseFallbackTruSo(session)) {
-            sos.setIdTruSoTiepNhan(current.getId());
+        /*
+         * FIX SVP03-BUG-003:
+         *
+         * Trước đây code tự gán:
+         * sos.setIdTruSoTiepNhan(current.getId())
+         * khi SOS chưa có idTruSoTiepNhan.
+         *
+         * Điều này làm case ITC_41.3 fail:
+         * - SOS chưa được tiếp nhận
+         * - request status=HOAN_THANH
+         * - Actual 200
+         * - Expected 400
+         *
+         * Quy tắc đúng:
+         * Chỉ được hoàn thành khi SOS đã được tiếp nhận bởi trụ sở
+         * và trạng thái hiện tại đang là DANG_XU_LY.
+         */
+        if (sos.getIdTruSoTiepNhan() == null
+                || !STATUS_DANG_XU_LY.equals(sos.getTrangThai())) {
+            return buildBadRequest(
+                    FIELD_ERROR,
+                    "Chỉ được hoàn thành SOS sau khi trụ sở đã tiếp nhận và đang xử lý"
+            );
+        }
+
+        if (current == null || current.getId() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(FIELD_ERROR, MSG_NOT_LOGGED_IN));
+        }
+
+        if (!sos.getIdTruSoTiepNhan().equals(current.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(FIELD_ERROR, "Trụ sở khác không được hoàn thành SOS không thuộc quyền"));
         }
 
         sos.setTrangThai(STATUS_HOAN_THANH);
@@ -458,10 +471,6 @@ public class TinHieuSOSApiController {
         fallback.setMatKhau("postman-test");
 
         return fallback;
-    }
-
-    private boolean shouldUseFallbackTruSo(HttpSession session) {
-        return getCurrentTruSo(session) == null;
     }
 
     private boolean isOtherTruSoCookie(String cookieHeader, HttpSession session, TinHieuSOS sos) {
@@ -566,5 +575,13 @@ public class TinHieuSOSApiController {
 
     private ResponseEntity<Object> buildBadRequest(String field, String message) {
         return ResponseEntity.badRequest().body(Map.of(field, message));
+    }
+
+    private String safeMessage(Exception e) {
+        if (e == null || e.getMessage() == null || e.getMessage().isBlank()) {
+            return "Có lỗi xảy ra";
+        }
+
+        return e.getMessage();
     }
 }

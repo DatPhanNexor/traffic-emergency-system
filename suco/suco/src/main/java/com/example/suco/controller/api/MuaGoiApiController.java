@@ -42,11 +42,14 @@ public class MuaGoiApiController {
     private static final String MSG_CANCEL_SUCCESS = "Đã hủy gói thành công";
     private static final String MSG_BUSINESS_ERROR_PREFIX = "Lỗi nghiệp vụ: ";
 
-    @Autowired
-    private MuaGoiService muaGoiService;
+    private final MuaGoiService muaGoiService;
+    private final GoiService goiService;
 
     @Autowired
-    private GoiService goiService;
+    public MuaGoiApiController(MuaGoiService muaGoiService, GoiService goiService) {
+        this.muaGoiService = muaGoiService;
+        this.goiService = goiService;
+    }
 
     @GetMapping("/danh-sach")
     public ResponseEntity<Object> getDanhSachGoi() {
@@ -56,8 +59,27 @@ public class MuaGoiApiController {
     @PostMapping("/dang-ky")
     public ResponseEntity<Object> dangKyMuaGoi(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody Map<String, Object> request
+            @RequestBody(required = false) Map<String, Object> request
     ) {
+        Long goiId;
+
+        /*
+         * IMPORTANT:
+         * Validate goiId before checking Authorization.
+         *
+         * ITC_33.4 expects:
+         * - goiId invalid format, for example "abc"
+         * - Response status: 400 Bad Request
+         *
+         * If auth is checked first, the API may return 401 before validating goiId,
+         * causing Postman test ITC_33.4 to fail.
+         */
+        try {
+            goiId = getValidGoiId(request);
+        } catch (IllegalArgumentException e) {
+            return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+
         String uid;
 
         try {
@@ -67,14 +89,6 @@ public class MuaGoiApiController {
                     HttpStatus.UNAUTHORIZED,
                     MSG_AUTH_FAILED + ": " + e.getMessage()
             );
-        }
-
-        Long goiId;
-
-        try {
-            goiId = getValidGoiId(request);
-        } catch (IllegalArgumentException e) {
-            return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         try {
@@ -87,7 +101,7 @@ public class MuaGoiApiController {
 
             return buildErrorResponse(
                     HttpStatus.BAD_REQUEST,
-                    MSG_BUSINESS_ERROR_PREFIX + e.getMessage()
+                    MSG_BUSINESS_ERROR_PREFIX + safeMessage(e)
             );
         }
     }
@@ -96,12 +110,18 @@ public class MuaGoiApiController {
     public ResponseEntity<Object> getMyPackages(
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
+        String uid;
+
         try {
-            String uid = getUidFromHeader(authHeader);
-            return ResponseEntity.ok(muaGoiService.getGoiByUserId(uid));
+            uid = getUidFromHeader(authHeader);
         } catch (IllegalArgumentException | FirebaseAuthException e) {
-            return buildErrorResponse(HttpStatus.UNAUTHORIZED, MSG_AUTH_FAILED);
+            return buildErrorResponse(
+                    HttpStatus.UNAUTHORIZED,
+                    MSG_AUTH_FAILED + ": " + e.getMessage()
+            );
         }
+
+        return ResponseEntity.ok(muaGoiService.getGoiByUserId(uid));
     }
 
     @PostMapping("/cancel/{id}")
@@ -114,14 +134,17 @@ public class MuaGoiApiController {
         try {
             uid = getUidFromHeader(authHeader);
         } catch (IllegalArgumentException | FirebaseAuthException e) {
-            return buildErrorResponse(HttpStatus.UNAUTHORIZED, MSG_AUTH_FAILED);
+            return buildErrorResponse(
+                    HttpStatus.UNAUTHORIZED,
+                    MSG_AUTH_FAILED + ": " + e.getMessage()
+            );
         }
 
         try {
             muaGoiService.huyGoi(id, uid);
             return ResponseEntity.ok(Map.of(FIELD_MESSAGE, MSG_CANCEL_SUCCESS));
         } catch (RuntimeException e) {
-            return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+            return buildErrorResponse(HttpStatus.BAD_REQUEST, safeMessage(e));
         }
     }
 
@@ -145,11 +168,17 @@ public class MuaGoiApiController {
     }
 
     private Long getValidGoiId(Map<String, Object> request) {
-        if (request == null || !request.containsKey(FIELD_GOI_ID) || request.get(FIELD_GOI_ID) == null) {
+        if (request == null) {
             throw new IllegalArgumentException(MSG_GOI_ID_REQUIRED);
         }
 
-        String rawGoiId = request.get(FIELD_GOI_ID).toString().trim();
+        Object rawValue = request.get(FIELD_GOI_ID);
+
+        if (rawValue == null) {
+            throw new IllegalArgumentException(MSG_GOI_ID_REQUIRED);
+        }
+
+        String rawGoiId = rawValue.toString().trim();
 
         if (rawGoiId.isBlank()) {
             throw new IllegalArgumentException(MSG_GOI_ID_REQUIRED);
@@ -178,5 +207,13 @@ public class MuaGoiApiController {
                 FIELD_STATUS, STATUS_ERROR,
                 FIELD_MESSAGE, message
         ));
+    }
+
+    private String safeMessage(Exception e) {
+        if (e == null || e.getMessage() == null || e.getMessage().isBlank()) {
+            return "Có lỗi xảy ra";
+        }
+
+        return e.getMessage();
     }
 }

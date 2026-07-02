@@ -3,14 +3,10 @@ name: SVP-03 Jest White-box Coverage
 on:
   push:
     branches:
-      - main
-      - master
-      - develop
+      - "**"
   pull_request:
     branches:
-      - main
-      - master
-      - develop
+      - "**"
   workflow_dispatch:
 
 jobs:
@@ -20,7 +16,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: suco
+        working-directory: suco/suco
 
     steps:
       - name: Checkout source code
@@ -31,7 +27,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: suco/package-lock.json
+          cache-dependency-path: suco/suco/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -44,4 +40,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: svp03-jest-coverage-report
-          path: suco/coverage/svp03
+          path: suco/suco/coverage/svp03

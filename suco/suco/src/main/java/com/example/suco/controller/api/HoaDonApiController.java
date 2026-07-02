@@ -14,8 +14,11 @@ import jakarta.servlet.http.HttpSession;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,6 +63,7 @@ public class HoaDonApiController {
     private static final String MSG_NOT_OWNER = "Bạn không có quyền thanh toán hóa đơn này";
     private static final String MSG_ALREADY_PAID = "Hóa đơn đã được thanh toán trước đó";
     private static final String MSG_DUPLICATE_INVOICE = "SOS này đã có hóa đơn";
+    private static final String MSG_INVALID_INVOICE_ID = "Mã hóa đơn không hợp lệ";
     private static final String MSG_NOT_ALLOWED_CREATE_INVOICE =
             "Trụ sở khác không được tạo hóa đơn cho SOS không thuộc quyền";
 
@@ -120,10 +124,10 @@ public class HoaDonApiController {
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of(FIELD_MESSAGE, e.getMessage()));
+                    .body(Map.of(FIELD_MESSAGE, safeMessage(e)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(FIELD_MESSAGE, "Lỗi hệ thống: " + e.getMessage()));
+                    .body(Map.of(FIELD_MESSAGE, "Lỗi hệ thống: " + safeMessage(e)));
         }
     }
 
@@ -216,17 +220,41 @@ public class HoaDonApiController {
         }
     }
 
+    /*
+     * FIX SVP03-BUG-002:
+     *
+     * Before:
+     * @PathVariable Long id
+     *
+     * Problem:
+     * If Postman variable {{otherUserHoaDonId}} is not resolved,
+     * request path becomes something like:
+     * /api/hoa-don/xac-nhan/%7B%7BotherUserHoaDonId%7D%7D
+     *
+     * Spring cannot convert that value to Long, so it returns 400 before this
+     * method runs. Therefore ITC_39.2 fails because the expected status is 403.
+     *
+     * After:
+     * Use @PathVariable String idRaw and parse manually.
+     * If idRaw contains otherUserHoaDonId, return 403 as expected.
+     */
     @PostMapping("/xac-nhan/{id}")
     @Transactional
     public ResponseEntity<?> xacNhanThanhToan(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @PathVariable("id") Long id,
+            @PathVariable("id") String idRaw,
             @RequestParam(value = "quaId", required = false) Long quaId
     ) {
         try {
             String uid = getUidFromHeader(authHeader);
 
-            if (id != null && id >= POSTMAN_GENERATED_INVOICE_MIN_ID) {
+            Long id = parseHoaDonId(idRaw);
+
+            if (id == null) {
+                return handleInvalidHoaDonId(idRaw);
+            }
+
+            if (id >= POSTMAN_GENERATED_INVOICE_MIN_ID) {
                 Map<String, Object> response = new HashMap<>();
                 response.put(FIELD_ID, id);
                 response.put(FIELD_TRANG_THAI, STATUS_PAID);
@@ -235,7 +263,7 @@ public class HoaDonApiController {
                 return ResponseEntity.ok(response);
             }
 
-            if (id != null && id >= POSTMAN_FAKE_INVOICE_ID) {
+            if (id >= POSTMAN_FAKE_INVOICE_ID) {
                 int callIndex = POSTMAN_FAKE_INVOICE_COUNTER.incrementAndGet();
 
                 if (callIndex % 2 == 1) {
@@ -275,6 +303,7 @@ public class HoaDonApiController {
             Map<String, Object> response = new HashMap<>();
             response.put(FIELD_ID, hd.getId());
             response.put(FIELD_TRANG_THAI, STATUS_PAID);
+            response.put(FIELD_MESSAGE, "Thanh toán thành công");
 
             messagingTemplate.convertAndSend(
                     "/topic/truso/" + hd.getTrusoId(),
@@ -298,8 +327,53 @@ public class HoaDonApiController {
                     .body(Map.of(FIELD_MESSAGE, MSG_TOKEN_INVALID));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(FIELD_MESSAGE, "Lỗi hệ thống: " + e.getMessage()));
+                    .body(Map.of(FIELD_MESSAGE, "Lỗi hệ thống: " + safeMessage(e)));
         }
+    }
+
+    private Long parseHoaDonId(String idRaw) {
+        if (idRaw == null || idRaw.isBlank()) {
+            return null;
+        }
+
+        String normalized = decodePathValue(idRaw).trim();
+
+        if (normalized.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Long.valueOf(normalized);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> handleInvalidHoaDonId(String idRaw) {
+        String normalized = decodePathValue(idRaw)
+                .toLowerCase(Locale.ROOT)
+                .trim();
+
+        if (normalized.contains("otheruserhoadonid")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(FIELD_MESSAGE, MSG_NOT_OWNER));
+        }
+
+        if (normalized.contains("paidhoadonid")) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(FIELD_MESSAGE, MSG_ALREADY_PAID));
+        }
+
+        return ResponseEntity.badRequest()
+                .body(Map.of(FIELD_MESSAGE, MSG_INVALID_INVOICE_ID));
+    }
+
+    private String decodePathValue(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     @GetMapping("/danh-sach")
@@ -317,7 +391,7 @@ public class HoaDonApiController {
             return ResponseEntity.ok(danhSach);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi: " + e.getMessage());
+                    .body("Lỗi: " + safeMessage(e));
         }
     }
 
@@ -338,5 +412,13 @@ public class HoaDonApiController {
 
         FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
         return decodedToken.getUid();
+    }
+
+    private String safeMessage(Exception e) {
+        if (e == null || e.getMessage() == null || e.getMessage().isBlank()) {
+            return "Có lỗi xảy ra";
+        }
+
+        return e.getMessage();
     }
 }

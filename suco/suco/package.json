@@ -1,13 +1,15 @@
 {
   "name": "suco",
   "version": "1.0.0",
-  "description": "SVP-03 white-box Jest testing",
+  "description": "White-box Jest testing for Traffic Emergency System",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
     "test": "jest",
     "test:svp03": "jest --config jest.config.svp03.js",
-    "coverage:svp03": "jest --config jest.config.svp03.js --coverage --ci --runInBand"
+    "coverage:svp03": "jest --config jest.config.svp03.js --coverage --ci --runInBand",
+    "test:whitebox": "jest --config jest.config.whitebox.js --runInBand",
+    "coverage:whitebox": "jest --config jest.config.whitebox.js --coverage --ci --runInBand"
   },
   "devDependencies": {
     "jest": "^30.4.2",

@@ -33,7 +33,7 @@ build/
 .vscode/
 
 # Chặn file Admin SDK Firebase 
-canhbao-b600b-firebase-adminsdk-*.json
+**/*firebase-adminsdk-*.json
 
 # Chặn log và file chạy tạm
 *.log
@@ -44,5 +44,16 @@ canhbao-b600b-firebase-adminsdk-*.json
 
 # Chặn toàn bộ thư mục upload dữ liệu của người dùng
 **/uploads/
+
 # Chặn các file ảnh mẫu trong project
 img/
+
+# Jest / Node.js
+**/node_modules/
+**/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local test artifacts
+*.zip

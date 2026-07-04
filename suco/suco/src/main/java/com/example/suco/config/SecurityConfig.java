@@ -55,14 +55,16 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 // 1. PUBLIC: Các đường dẫn ai cũng vào được
-                .requestMatchers(ADMIN_LOGIN_URL).permitAll() 
-                .requestMatchers(API_AUTH_URL_PATTERN).permitAll()
+                .requestMatchers(ADMIN_LOGIN_URL).permitAll()
+                .requestMatchers(API_AUTH_ALL_USERS_URL).hasRole(ADMIN_ROLE)
+                .requestMatchers("/api/auth/sync").permitAll()
+                .requestMatchers("/api/auth/me").authenticated()
 
                 // 2. ADMIN ONLY: Sử dụng Hằng số (Constants) để fix lỗi Sonar
                 .requestMatchers(ADMIN_URL_PATTERN).hasRole(ADMIN_ROLE)
                 .requestMatchers(API_GOI_URL_PATTERN).hasRole(ADMIN_ROLE)
                 .requestMatchers(API_ADMIN_USER_URL_PATTERN).hasRole(ADMIN_ROLE)
-                .requestMatchers(API_AUTH_ALL_USERS_URL).hasRole(ADMIN_ROLE)
+                .requestMatchers("/api/admin/**").hasRole(ADMIN_ROLE)
 
                 // 3. USER + ADMIN: Yêu cầu đăng nhập nói chung
                 .requestMatchers(API_MAP_URL_PATTERN).authenticated()
